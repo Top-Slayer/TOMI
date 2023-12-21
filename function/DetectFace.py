@@ -11,6 +11,10 @@ face_cascade = cv2.CascadeClassifier(
 
 state = True
 
+# def randomSpeech(){
+#     text = []
+# }
+
 def detectFace(frame):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -49,7 +53,7 @@ def openCamera():
     while True:
         ret, frame = cap.read()
         frame = cv2.flip(frame, 1)
-        
+
         frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
         frame = cv2.rotate(frame, cv2.ROTATE_180)
 
