@@ -11,9 +11,10 @@ cap = cv2.VideoCapture(0) # Normally set to 1
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
 
 
-# def randomSpeech(){
-#     text = []
-# }
+def randomSpeech():
+    text = []
+    
+    return 
 
 def settingSound():
     global state
