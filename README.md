@@ -1,6 +1,6 @@
 # Maybe it's my graduate project hahahaha~~~
 ## command: 
-If you want to edit some file in this project.
+If you want to edit some file in this project you have to run below command before edit.
 
 Run virtual environment: 
 - .\TOMI-env\Scripts\activate  # For window os
