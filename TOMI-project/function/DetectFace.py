@@ -1,6 +1,7 @@
 import cv2
 from deepface import DeepFace
 from threading import Thread
+import random
 
 from function import PlaySound
 
@@ -12,14 +13,21 @@ face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_fronta
 
 
 def randomSpeech():
-    text = []
-    
-    return 
+    text = [
+            "ล้มเหลวแค่ประสบการณ์ชีวิต อย่าไปคิดอะไรมาก", 
+            "จงก้าวไปข้างหน้า ถึงจะช้าแต่ก็ยังดีกว่าถอยหลัง",
+            "เป้าหมายประจำวัน เป็นคนที่ดีกว่าเมื่อวาน",
+            "ฉันจะไม่อนุญาตให้ใครหน้าไหนมาทำลายความสุข และ รอยยิ้มของฉันเด็ดขาด",
+            "มีเหตุผลอะไรที่จะไม่อนุญาตให้ตัวเองมีความสุข"
+            ]
+    random_num = random.randint(0, len(text)-1)
+    return text[random_num]
 
 def settingSound():
     global state
     if state:
-        Thread(target=PlaySound.playSound, args=("gg",)).start()
+        randomSpeech()
+        Thread(target=PlaySound.playSound, args=(randomSpeech(),)).start()
         state = False
 
 def detectFace(frame):
@@ -28,7 +36,7 @@ def detectFace(frame):
     faces = face_cascade.detectMultiScale(
         gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30)
     )
-
+ 
     for x, y, w, h in faces:
         settingSound()
         cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 106, 42), 2)
