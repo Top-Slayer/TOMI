@@ -1,5 +1,5 @@
-## Maybe it's my graduate project hahahaha~~~
-command:
+# Maybe it's my graduate project hahahaha~~~
+## command:
 Run virtual environment: 
 - .\TOMI-env\Scripts\activate  # For window os
 - source TOMI-env/Scripts/activate # For git or linux kernel
