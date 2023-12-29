@@ -2,5 +2,5 @@
 ## command:
 Run virtual environment: 
 - .\TOMI-env\Scripts\activate  # Warning: You have to located on default path when accessed into this project.
-### Stop virtual environment: 
+Stop virtual environment: 
 - deactivate
