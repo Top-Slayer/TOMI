@@ -81,7 +81,6 @@ def openCamera():
 
         # wait for pressed q letter
         if cv2.waitKey(1) & 0xFF == ord("q"):
-            print("\nEnding...")
             break
 
     cap.release()

@@ -10,16 +10,17 @@ setup_install(){
     if [ -d "TOMI-env" ]; then
         echo " Folder TOMI-env exists."
     else
-        virtualenv TOMI-env
+        python -m venv TOMI-env
     fi
 
     source TOMI-env/Scripts/activate
+    python -m pip install --upgrade pip
 }
 
 setup_install
 
 pip install -r requirements.txt
-pip freeze > requirements.txt
+# pip freeze > requirements.txt
 echo -e "\n ------------------------------------------------ \n"
 echo -e " TOMI processing...\n"
 
