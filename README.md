@@ -1,6 +1,7 @@
 # Maybe it's my graduate project hahahaha~~~
 ## Requirement:
-- **Git bash** >
+- **Git bash**
+
   > *# For execute run.sh file if don't have install in this link: https://git-scm.com/downloads*
   
 ## command: 
