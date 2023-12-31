@@ -8,8 +8,9 @@
 If you want to edit some file in this project you have to run below command before edit.
 
 Run virtual environment: 
-> **.\TOMI-env\Scripts\activate**  *# For window os*
+- **.\TOMI-env\Scripts\activate**
 
+  > *# For window os*
 > **source TOMI-env/Scripts/activate**  *# For git or linux kernel*
 
   Warning: You have to located on default path when accessed into this project.
