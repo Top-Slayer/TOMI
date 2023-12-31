@@ -1,6 +1,6 @@
 # Maybe it's my graduate project hahahaha~~~
 ## Requirement:
-- **Git bash**  > *# For execute run.sh file if don't have install in this link: https://git-scm.com/downloads*
+**Git bash** > *# For execute run.sh file if don't have install in this link: https://git-scm.com/downloads*
   
 ## command: 
 If you want to edit some file in this project you have to run below command before edit.
