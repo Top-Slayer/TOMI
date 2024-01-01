@@ -1,5 +1,5 @@
 # TOMI project
-The story is I want to try yourself for create some new things in my Robot club and the demo of this project can win in 2nd of Problem of Mental health project
+  The story is I want to try yourself for create some new things in my Robot club and the demo of this project can win in 2nd of Problem of Mental health project.
 
 ## Requirement:
 - **Git bash**
