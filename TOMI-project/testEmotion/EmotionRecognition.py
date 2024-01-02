@@ -26,6 +26,7 @@ while capture.isOpened():
 
     # resizing the frame for better view
     frame = cv2.resize(frame, (800, 600))
+    frame = cv2.flip(frame, 1)
 
     # Converting the from BGR to RGB
     image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -67,7 +68,6 @@ while capture.isOpened():
 
     # Display the resulting image
     cv2.imshow("Facial and Hand Landmarks", image)
-    print(drawing)
     # Enter key 'q' to break the loop
     if cv2.waitKey(5) & 0xFF == ord("q"):
         break
