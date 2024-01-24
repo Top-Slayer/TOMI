@@ -1,19 +1,42 @@
 import pygame
 from gtts import gTTS
-from threading import Thread
-from function import DetectFace
+import random
+
+enabled = True
+previous_text = str()
 
 pygame.mixer.init()
 
+
+def _randomSentence(word):
+    sentences = str()
+    happy_sentences = {"มีความสุขแบบนี้ก็ดีแล้วละโลกจะได้สดใส"}
+    if word == "Happy":
+        sentences = random.choice(happy_sentences)
+    else:
+        sentences = "Bruh"
+
+    return sentences
+
+
 def playSound(text):
-    print(f"--> AI thinking: {text}")
-    myobj = gTTS(text=text, lang="th", slow=False)
-    myobj.save(r'output.wav')
+    global enabled
+    global previous_text
 
-    print("--> AI talking...")
-    my_sound = pygame.mixer.Sound('output.wav')
-    my_sound.play()
+    enabled = False
 
-    pygame.time.wait(int(my_sound.get_length() * 1000))
+    if previous_text != text:
+        voice_sentences = _randomSentence(text)
+        print(f"--> Text: {voice_sentences}")
+        myobj = gTTS(text=voice_sentences, lang="th", slow=False)
+        myobj.save(r"output.wav")
 
-    DetectFace.state = True
+        print("--> AI talking...")
+        my_sound = pygame.mixer.Sound("output.wav")
+        my_sound.play()
+
+        pygame.time.wait(int(my_sound.get_length() * 1000))
+
+    previous_text = text
+
+    enabled = True
