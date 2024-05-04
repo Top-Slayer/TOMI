@@ -26,9 +26,9 @@ def playSound(text):
     enabled = False
 
     if previous_text != text:
-        voice_sentences = _randomSentence(text)
+        voice_sentences = text
         print(f"--> Text: {voice_sentences}")
-        myobj = gTTS(text=voice_sentences, lang="th", slow=False)
+        myobj = gTTS(text=voice_sentences, lang="ko", slow=False)
         myobj.save(r"output.wav")
 
         print("--> AI talking...")
