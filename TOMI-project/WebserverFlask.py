@@ -1,4 +1,4 @@
-import os
+# import os
 import csv
 import copy
 import itertools
@@ -6,49 +6,44 @@ import cv2 as cv
 import numpy as np
 import mediapipe as mp
 from model import KeyPointClassifier
-from flask import Flask, request, jsonify, send_file, render_template
-from io import BytesIO
+from flask import Flask, request, render_template
+# from io import BytesIO
+import base64
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route('/', methods=['GET'])
 def index():
-    return render_template('../website/frontend/index.html')
+    return render_template('index.html')
 
-@app.route('/upload', methods=['POST'])
-def upload_file():
-    if 'file' not in request.files:
-        return jsonify(error="No file part"), 400
-    
-    file = request.files['file']
-
-    if file.filename == '':
-        return jsonify(error="No selected file"), 400
-    
-    file_path = os.path.join(os.getcwd(), 'images/uploaded_image.jpg')
-    os.makedirs(os.path.dirname(file_path), exist_ok=True)
-    file.save(file_path)
-    
+@app.route('/video_feed', methods=['POST'])
+def video_feed():
     try:
-        image = addEmotionToImg(file_path)
+        if not request.json or 'image' not in request.json:
+            return {'error': 'Invalid request, no image provided'}, 400
+
+        data = request.json['image']
+        data = data.split(',')[1]  # Remove the data URL part
+        image_data = base64.b64decode(data)
+        np_arr = np.frombuffer(image_data, np.uint8)
+        frame = cv.imdecode(np_arr, cv.IMREAD_COLOR)
+
+        if frame is None:
+            return {'error': 'Could not decode image'}, 400
+
+        # Process the frame (e.g., detect emotion)
+        frame = addEmotionToImg(frame)
+
+        # Encode the frame back to JPEG
+        _, buffer = cv.imencode('.jpg', frame)
+        response = base64.b64encode(buffer).decode('utf-8')
+
+        return {'image': response}, 200
     except Exception as e:
-        return jsonify(error=f"Error processing image: {str(e)}"), 500
-    
-    if image is None:
-        return jsonify(error="Could not read the image"), 400
-    
-    # output_file = os.path.join(os.getcwd(), 'images/output_image.jpg')
-    #
-    # if cv.imwrite(output_file, image):
-    #     return jsonify(message=f"Image successfully saved to {output_file}"), 200
-    # else:
-    #     return jsonify(error="Could not save the image"), 500
-
-    _, buffer = cv.imencode('.jpg', image)
-    image_bytes = BytesIO(buffer)
-
-    # Send the image bytes as a response
-    return send_file(image_bytes, mimetype='image/jpeg')
+        print(e)
+        return {'error': str(e)}, 500
 
 def calc_landmark_list(image, landmarks):
     image_width, image_height = image.shape[1], image.shape[0]
@@ -126,7 +121,7 @@ def draw_info_text(image, brect, facial_text):
 
     return image
 
-def addEmotionToImg(img_path):
+def addEmotionToImg(image):
     use_brect = True
 
     mp_face_mesh = mp.solutions.face_mesh
@@ -145,9 +140,6 @@ def addEmotionToImg(img_path):
         keypoint_classifier_labels = csv.reader(f)
         keypoint_classifier_labels = [row[0] for row in keypoint_classifier_labels]
 
-    image = cv.imread(img_path)
-    if image is None:
-        raise ValueError(f"Error loading image: {img_path}")
     debug_image = copy.deepcopy(image)
 
     image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
