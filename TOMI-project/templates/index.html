@@ -6,42 +6,6 @@
     <title>Webcam Emotion Detection</title>
 </head>
 <body>
-    <h1>Webcam Emotion Detection</h1>
-    <video id="video" width="640" height="480" autoplay></video>
-    <canvas id="canvas" width="640" height="480" style="display: none;"></canvas>
-    <img id="result" src="" alt="Processed Image" />
-
-    <script>
-        async function startCamera() {
-            const video = document.getElementById('video');
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            video.srcObject = stream;
-
-            video.addEventListener('play', () => {
-                const canvas = document.getElementById('canvas');
-                const context = canvas.getContext('2d');
-
-                setInterval(async () => {
-                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    const imageData = canvas.toDataURL('image/jpeg');
-
-                    const response = await fetch('http://127.0.0.1:5000/video_feed', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ image: imageData })
-                    });
-
-                    const result = await response.json();
-                    if (result.image) {
-                        document.getElementById('result').src = 'data:image/jpeg;base64,' + result.image;
-                    }
-                }, 100);  // Send frame every 1 second
-            });
-        }
-
-        window.onload = startCamera;
-    </script>
+    <h1>Tomi API</h1>
 </body>
 </html>
