@@ -2,3 +2,4 @@ TOMI-env/
 **/__pycache__/*.pyc
 ngrok.exe
 server.sh
+guide-execute.txt
