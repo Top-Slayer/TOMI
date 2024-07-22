@@ -1,47 +1,41 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Webcam Emotion Detection</title>
+  <title>Webcam Capture</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <h1>Webcam Emotion Detection</h1>
-    <video id="video" width="640" height="480" autoplay></video>
-    <canvas id="canvas" width="640" height="480" style="display: none;"></canvas>
-    <img id="result" src="" alt="Processed Image" />
+  <div id=state>
+    <div align="center">
+      <video id="video" width="640" height="480" autoplay></video>
+    </div>
+    <div align="center">
+      <button type="button" id="capture" class="badge text-bg-success rounded-pill" data-toggle="modal" data-target="#myModal" style="border:none; width:20%; height:10%;">Capture</button>
+    </div>
+  </div>
 
-    <script>
-        async function startCamera() {
-            const video = document.getElementById('video');
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            video.srcObject = stream;
+  <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="myModalLabel">Detect Emotion</h5>
+        </div>
+        <div class="modal-body" align="center">
+            <img id="img" width="640">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary">Save changes</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-            video.addEventListener('play', () => {
-                const canvas = document.getElementById('canvas');
-                const context = canvas.getContext('2d');
 
-                setInterval(async () => {
-                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    const imageData = canvas.toDataURL('image/jpeg');
+  <script src="requestToWebserver.js"></script>
 
-                    const response = await fetch('https://daring-swine-enabling.ngrok-free.app/video_feed', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ image: imageData })
-                    });
-
-                    const result = await response.json();
-                    if (result.image) {
-                        document.getElementById('result').src = 'data:image/jpeg;base64,' + result.image;
-                    }
-                }, 5000);  // Send frame every 1 second
-            });
-        }
-
-        window.onload = startCamera;
-    </script>
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>
