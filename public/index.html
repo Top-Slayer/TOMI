@@ -7,7 +7,7 @@
 <body>
   <div id=state>
     <div align="center">
-      <video id="video" width="640" height="480" autoplay></video>
+      <video id="video" height="100%" autoplay></video>
     </div>
     <div align="center">
       <button type="button" id="capture" class="badge text-bg-success rounded-pill" data-toggle="modal" data-target="#myModal" style="border:none; width:20%; height:10%;">Capture</button>
@@ -21,16 +21,15 @@
           <h5 class="modal-title" id="myModalLabel">Detect Emotion</h5>
         </div>
         <div class="modal-body" align="center">
-            <img id="img" width="640">
+            <img id="img" width="100%">
+            <h2 id="text"> . . . </h2>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-primary">Save changes</button>
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
         </div>
       </div>
     </div>
   </div>
-
 
   <script src="requestToWebserver.js"></script>
 

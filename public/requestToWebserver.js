@@ -1,5 +1,5 @@
-const url = 'http://localhost:5000/video_feed';
-//const url = 'https://daring-swine-enabling.ngrok-free.app/video_feed';
+// const url = 'http://localhost:5000/video_feed';
+const url = 'https://daring-swine-enabling.ngrok-free.app/video_feed';
 
 const video = document.getElementById('video');
 const img = document.getElementById('img');
@@ -35,6 +35,7 @@ captureButton.addEventListener('click', () => {
   .then(response => response.json())
   .then(data => {
     img.src = 'data:image/jpeg;base64,' + data.image;
+    document.getElementById("text").innerHTML = data.text;
     // state.style.display = 'none';
     // state.style.display = 'block';
     console.log('Success:', data);
