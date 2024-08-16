@@ -1,6 +1,6 @@
 setup_install(){
     if pip list | grep -Fq "virtualenv"; then
-        echo " Library [ virtualenv ] is installed"
+        echo " Library [ virtualenv ] already installed"
         pip list | grep virtualenv
     else
         echo " Installing..." 
@@ -10,7 +10,7 @@ setup_install(){
     if [ -d "TOMI-env" ]; then
         echo " Folder TOMI-env exists."
     else
-        python -m venv TOMI-env # create virtual environment folder
+        python -m venv env # create virtual environment folder
     fi
 
     source TOMI-env/Scripts/activate

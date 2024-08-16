@@ -1,4 +1,4 @@
-TOMI-env/
+env/
 **/__pycache__/*.pyc
 ngrok.exe
 server.sh
