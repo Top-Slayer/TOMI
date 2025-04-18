@@ -11,14 +11,15 @@ tokenizer = AutoTokenizer.from_pretrained("facebook/mms-tts-lao")
 def transcript(text: str):
     inputs = tokenizer(text, return_tensors="pt")
 
-    print(f"\nProcess {text}.wav: {inputs}")
+    # print(f"\nProcess {text}.wav: {inputs}")
 
     with torch.no_grad():
         output = model(**inputs).waveform
 
     output = (output.cpu().numpy() * 32767).astype(np.int16).squeeze()
+    print(output)
 
-    mem.append(output)
+    mem.write_audio(output)
 
     # scipy.io.wavfile.write(f"{folder}/{n}.wav", rate=model.config.sampling_rate, data=output)
 

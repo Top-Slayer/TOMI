@@ -13,9 +13,6 @@ system_prompt = """
       - Your name is "ທູມິ"
 """
 
-sentense = ""
-
-
 def _timer(choice: int):
     if choice == 1:
         start_time = time.time()
@@ -30,6 +27,8 @@ def chat(user_prompt: str, debug=False):
       [User Question]
       {user_prompt}
       """
+
+    sentense = ""
 
     try:
         response = requests.post(
