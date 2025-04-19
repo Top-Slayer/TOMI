@@ -17,7 +17,7 @@ def transcript(text: str):
         output = model(**inputs).waveform
 
     output = (output.cpu().numpy() * 32767).astype(np.int16).squeeze()
-    print(output)
+    print(f"tts: {output} size: {len(output)} shape: {output.shape}")
 
     mem.write_audio(output)
 

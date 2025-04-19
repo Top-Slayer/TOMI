@@ -1,30 +1,37 @@
-import threading
 from multiprocessing import Process, cpu_count, shared_memory
-import math
 import time
 
 # from function import EmotionalRecognition
 # from function import PlaySound
-from functions import chat2llm
+# from functions import chat2llm
+from functions import tts
 from shared_datas import mem
 import numpy as np
 
 
-def audio_reader(name, shape, dtype):
+def audio_reader(name, shape, dtype, offsets):
     shm = shared_memory.SharedMemory(name=name)
-    while True:
-        print(mem.get_all_audio())
-        time.sleep(1)
+    shared_array = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
 
+    while True:
+        print(len(offsets))
+        for i, (start, length) in enumerate(offsets):
+            audio = shared_array[start : start + length]
+            print(
+                f"Audio[{i}] (length={length}) => {audio[:10]}..."
+            )
+        time.sleep(1)
 
 
 if __name__ == "__main__":
     try:
-        shm_name, shape, dtype = mem.get_shared_info()
-        p = Process(target=audio_reader, args=(shm_name, shape, dtype))
+        shm_name, shape, dtype, offsets, _ = mem.get_shared_info()
+        p = Process(target=audio_reader, args=(shm_name, shape, dtype, offsets))
         p.start()
 
-        chat2llm.chat("ສະບາຍດີທູມິ")
+        tts.transcript("ສະບາຍດີທູມິ")
+        time.sleep(10)
+        tts.transcript("ສະບາຍດີທູມິ")
 
         time.sleep(10)
     except KeyboardInterrupt:
@@ -32,7 +39,6 @@ if __name__ == "__main__":
     finally:
         p.terminate()
         mem.close()
-        mem.unlink()
 
 # threading.Thread(target=EmotionalRecognition.openCamera).start()
 
