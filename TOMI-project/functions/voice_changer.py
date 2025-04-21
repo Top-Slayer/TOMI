@@ -5,17 +5,16 @@ import socketio
 import time
 import urllib3
 import numpy as np
-import os
+import os, io
 from pydub import AudioSegment
+from scipy.io import wavfile
+from multiprocessing import shared_memory
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 BUFFER_SIZE = 2048 * 2 * 10
 SAMPLING_RATE = 44100
 GAIN = 10
-
-in_folder = "sentences"
-out_folder = "vc_sentences"
 
 # dont forget to make mono in audio
 
@@ -63,10 +62,6 @@ class MyCustomNamespace(socketio.ClientNamespace):
         data = np.clip(data, -32768, 32767).astype(np.int16)
         data = struct.pack("<%sh" % len(data), *data)
 
-        # Optional: Save or play output
-        if self.wave_writer is not None:
-            self.wave_writer.writeframes(data)
-
 
 def stream_from_file(filename, sio, namespace="/test"):
     wf = wave.open(filename, "rb")
@@ -93,46 +88,44 @@ def stream_from_file(filename, sio, namespace="/test"):
     print("[INFO] Streaming completed.")
 
 
-if __name__ == "__main__":
-    parser = setupArgParser()
-    args, unknown = parser.parse_known_args()
+def convert(name, shape, dtype, offsets):
+    shm = shared_memory.SharedMemory(name=name)
+    shared_array = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
 
-    os.makedirs(out_folder, exist_ok=True)
-    in_file_path = [os.path.join(in_folder, f) for f in os.listdir(in_folder)]
-    # input_wav_path = args.file
-    input_wav_path = in_file_path
+    sio = socketio.Client(ssl_verify=False)
+    sio.connect("http://localhost:18888/", namespaces=["/test"])
 
-    convert_to_44100(input_wav_path)
+    print("[>] Connected and ready to stream.")
 
-    wf = wave.open(input_wav_path, "rb")
-    assert wf.getnchannels() == 1, "Input must be mono"
-    assert wf.getsampwidth() == 2, "Input must be 16-bit PCM"
-    assert wf.getframerate() == SAMPLING_RATE, "Input must be 44100Hz"
+    try:
+        streamed_blocks = set()
 
+        while True:
+            if offsets:
+                for i, (start, length) in enumerate(offsets):
+                    audio_data = shared_array[start : start + length]
 
-    with wave.open(f"{out_folder}/output.wav", "wb") as out_wav:
-        out_wav.setnchannels(1)
-        out_wav.setsampwidth(2)  # 16-bit
-        out_wav.setframerate(SAMPLING_RATE)
+                    print(f"\n[>] Streaming block [{i}] ({length} samples)")
 
-        sio = socketio.Client(ssl_verify=False)
-        my_namespace = MyCustomNamespace("/test", out_wav)
-        sio.register_namespace(my_namespace)
-        sio.connect(args.url)
+                    os.makedirs("out_folder", exist_ok=True)
+                    wavfile.write(
+                        f"out_folder/output_{i}.wav", SAMPLING_RATE, audio_data
+                    )
 
-        print(f"[>] Streaming from '{input_wav_path}'...")
-
-        try:
-            while True:
-                data = wf.readframes(BUFFER_SIZE)
-                if not data:
-                    break  # End of file
-                sio.emit(
-                    "request_message", [time.time() * 1000, data], namespace="/test"
-                )
-                time.sleep(BUFFER_SIZE / SAMPLING_RATE)
-        except KeyboardInterrupt:
-            print("\n[!] Interrupted by user")
-        finally:
-            wf.close()
-            sio.disconnect()
+                    for j in range(len(audio_data)):
+                        chunk = audio_data[j : j + BUFFER_SIZE].tobytes()
+                        sio.emit(
+                            "request_message",
+                            [int(time.time() * 1000), chunk],
+                            namespace="/test",
+                        )
+                        time.sleep(BUFFER_SIZE / SAMPLING_RATE)
+                    streamed_blocks.add(i)
+            else:
+                time.sleep(1)
+    except KeyboardInterrupt:
+        print("\n[!] Interrupted by user")
+    finally:
+        print("[!] Steam has stoped")
+        sio.disconnect()
+        shm.close()

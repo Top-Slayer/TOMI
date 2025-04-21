@@ -3,8 +3,8 @@ import time
 
 # from function import EmotionalRecognition
 # from function import PlaySound
-# from functions import chat2llm
-from functions import tts
+from functions import chat2llm
+from functions import voice_changer as vc
 from shared_datas import mem
 import numpy as np
 
@@ -26,12 +26,11 @@ def audio_reader(name, shape, dtype, offsets):
 if __name__ == "__main__":
     try:
         shm_name, shape, dtype, offsets, _ = mem.get_shared_info()
-        p = Process(target=audio_reader, args=(shm_name, shape, dtype, offsets))
+        p = Process(target=vc.convert, args=(shm_name, shape, dtype, offsets))
         p.start()
 
-        tts.transcript("ສະບາຍດີທູມິ")
-        time.sleep(10)
-        tts.transcript("ສະບາຍດີທູມິ")
+        # tts.transcript("ສະບາຍດີທູມິ")
+        chat2llm.chat("ສະບາຍດີທູມິ")
 
         time.sleep(10)
     except KeyboardInterrupt:
