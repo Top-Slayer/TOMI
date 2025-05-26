@@ -4,3 +4,4 @@ ngrok.exe
 server.sh
 guide-execute.txt
 images/
+server/target
