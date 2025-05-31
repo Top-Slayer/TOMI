@@ -5,80 +5,57 @@ use axum::{
     Router,
 };
 use std::net::SocketAddr;
-use tower_http::trace::TraceLayer;
-use tracing_subscriber;
-use pyo3::prelude::*;
-use pyo3::types::{PyModule, PyList};
+use tokio::fs::File;
+use tokio::io::AsyncWriteExt;
+use futures::{StreamExt};
+
+pub mod audio {
+    include!(concat!(env!("OUT_DIR"), "/audio.rs"));
+}
 
 #[tokio::main]
 async fn main() {
-    pyo3::prepare_freethreaded_python();
+    let audio = audio::AudioPacket{
+        data: vec![1, 2, 3, 4],
+        sample_rate: 16000,
+        channels: 1,
+        format: "wav".to_string(),
+    };
 
-    let initial_response = Python::with_gil(|py| -> PyResult<String> {
-        let module = PyModule::from_code(
-            py,
-            include_str!("../../TOMI-project/test.py"),
-            "TOMI-project/test.py",
-            "test",
-        )?;
-        let greeting: String = module.getattr("greeting")?.call0()?.extract()?;
-        Ok(greeting)
-    });
-
-    // println!("{:#?}", initial_response);
-
-    tracing_subscriber::fmt::init();
-
-    let app = Router::new()
-        .route("/connect-ws-tomi", get(websocket_handler))
-        .layer(TraceLayer::new_for_http());
+    let app = Router::new().route("/ws", get(handle_ws_upgrade));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-    println!("WebSocket server running on ws://{}", addr);
-
+    println!("Listening on: {}", addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await
         .unwrap();
 }
 
-async fn websocket_handler(ws: WebSocketUpgrade) -> impl IntoResponse {
+async fn handle_ws_upgrade(ws: WebSocketUpgrade) -> impl IntoResponse {
     ws.on_upgrade(handle_socket)
 }
 
 async fn handle_socket(mut socket: WebSocket) {
-    if let Err(e) = socket.send(Message::Text("Connected to echo server".into())).await {
-        println!("Failed to send welcome message: {}", e);
-        return;
-    }
+    let mut file = File::create("received_audio.wav")
+        .await
+        .expect("Failed to create file");
 
-    while let Some(msg) = socket.recv().await {
+    while let Some(Ok(msg)) = socket.next().await {
         match msg {
-            Ok(msg) => {
-                match msg {
-                    Message::Text(text) => {
-                        if let Err(e) = socket.send(Message::Text(format!("Echo: {}", text))).await {
-                            println!("Failed to send message: {}", e);
-                            break;
-                        }
-                    }
-                    Message::Close(_) => {
-                        println!("Client disconnected");
-                        break;
-                    }
-                    _ => {
-                        println!("Received non-text message");
-                    }
+            Message::Binary(data) => {
+                if let Err(e) = file.write_all(&data).await {
+                    eprintln!("Write error: {}", e);
+                    break;
                 }
             }
-            Err(e) => {
-                println!("Error receiving message: {}", e);
+            Message::Close(_) => {
+                println!("Connection closed");
                 break;
             }
+            _ => {}
         }
     }
 
-    if let Err(e) = socket.close().await {
-        println!("Failed to close socket: {}", e);
-    }
+    println!("Done receiving audio");
 }

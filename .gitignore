@@ -5,3 +5,5 @@ server.sh
 guide-execute.txt
 images/
 server/target
+TOMI-project/LLM/sentences/
+.env

@@ -9,6 +9,15 @@ import json
 import os
 
 
+repo_name = "wav2vec2-large-xls-r-300m-lao"
+
+
+from dotenv import load_dotenv
+load_dotenv()
+import huggingface_hub
+huggingface_hub.login(token=os.getenv("HUGGING_FACE_API"))
+
+
 df = pd.read_csv("sperated_dataset/train.tsv", sep="\t")
 train_ds = Dataset.from_pandas(df)
 
@@ -96,7 +105,10 @@ from transformers import Wav2Vec2CTCTokenizer
 tokenizer = Wav2Vec2CTCTokenizer.from_pretrained(
     "./", unk_token="[UNK]", pad_token="[PAD]", word_delimiter_token="|"
 )
+
 print(tokenizer.tokenize(text="ສະບາຍດີ ເຈົ້າຂອງ"))
+tokenizer.push_to_hub(repo_name)
+
 
 # Sampling rate of audio
 from transformers import Wav2Vec2FeatureExtractor
@@ -109,6 +121,7 @@ feature_extractor = Wav2Vec2FeatureExtractor(
     return_attention_mask=True,
 )
 
+
 # Define processor
 from transformers import Wav2Vec2Processor
 
@@ -117,7 +130,6 @@ processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tok
 
 # Test random output
 # ======================================================================
-import torchaudio
 import torch
 import random
 
@@ -144,12 +156,11 @@ print("Sampling rate:", train_ds[rand_int]["audio"]["sampling_rate"])
 
 
 def prepare_dataset(batch):
-    audio = batch["audio"]
-    batch["input_values"] = processor(audio, sampling_rate=16000).input_values[0]
+    audio = batch["audio"]["array"]
+    sampling_rate = batch["audio"]["sampling_rate"]
 
-    labels = processor(text=batch["sentence"]).input_ids
-    batch["labels"] = labels
-
+    batch["input_values"] = processor(audio, sampling_rate=sampling_rate).input_values[0]
+    batch["labels"] = processor(text=batch["sentence"]).input_ids
     return batch
 
 
@@ -232,6 +243,7 @@ model = Wav2Vec2ForCTC.from_pretrained(
     ignore_mismatched_sizes=True,
 )
 
+# model.freeze_feature_extractor()
 model.freeze_feature_encoder()
 
 from transformers import TrainingArguments
@@ -251,7 +263,7 @@ training_args = TrainingArguments(
     learning_rate=3e-4,
     warmup_steps=500,
     save_total_limit=2,
-    push_to_hub=False,
+    push_to_hub=True,
 )
 
 from transformers import Trainer
@@ -267,3 +279,4 @@ trainer = Trainer(
 )
 
 trainer.train()
+trainer.push_to_hub()

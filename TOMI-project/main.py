@@ -4,6 +4,7 @@ import time
 # from function import EmotionalRecognition
 # from function import PlaySound
 from functions import chat2llm
+from functions import tts, stt
 from functions import voice_changer as vc
 from shared_datas import mem
 import numpy as np
@@ -29,8 +30,9 @@ if __name__ == "__main__":
         p = Process(target=vc.convert, args=(shm_name, shape, dtype, offsets))
         p.start()
 
-        # tts.transcript("ສະບາຍດີທູມິ")
-        chat2llm.chat("ສະບາຍດີທູມິ")
+        text = stt.transcript("../fine-tuning-sst/test/atoon_audio.wav")
+        print(text)
+        chat2llm.chat(text)
 
         time.sleep(10)
     except KeyboardInterrupt:

@@ -1,48 +1,33 @@
-import speech_recognition as sr
-import pyttsx3 
+from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
+import torch
+import torchaudio
 
-# Initialize the recognizer 
-r = sr.Recognizer() 
 
-# Function to convert text to
-# speech
-def SpeakText(command):
-	
-	# Initialize the engine
-	engine = pyttsx3.init()
-	engine.say(command) 
-	engine.runAndWait()
-	
-	
-# Loop infinitely for user to
-# speak
+model_path = "../fine-tuning-sst/model/checkpoint-2130"
 
-while(1): 
-	
-	# Exception handling to handle
-	# exceptions at the runtime
-	try:
-		
-		# use the microphone as source for input.
-		with sr.Microphone() as source2:
-			
-			# wait for a second to let the recognizer
-			# adjust the energy threshold based on
-			# the surrounding noise level 
-			r.adjust_for_ambient_noise(source2, duration=0.2)
-			
-			#listens for the user's input 
-			audio2 = r.listen(source2)
-			
-			# Using google to recognize audio
-			MyText = r.recognize_google(audio2)
-			MyText = MyText.lower()
+model = Wav2Vec2ForCTC.from_pretrained(model_path)
+processor = Wav2Vec2Processor.from_pretrained(model_path)
 
-			print("Did you say ",MyText)
-			SpeakText(MyText)
-			
-	except sr.RequestError as e:
-		print("Could not request results; {0}".format(e))
-		
-	except sr.UnknownValueError:
-		print("unknown error occurred")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model.to(device)
+
+print("STT model path:", model_path)
+print("Process device:", device)
+
+
+def transcript(path: str) -> str:
+    speech_array, sampling_rate = torchaudio.load(path)
+
+    if speech_array.shape[0] > 1:
+        speech_array = speech_array.mean(dim=0)
+    speech_array = speech_array.numpy()
+
+    input_dict = processor(
+        speech_array, return_tensors="pt", padding=True, sampling_rate=sampling_rate
+    )
+
+    logits = model(input_dict.input_values.to(device)).logits
+    pred_ids = torch.argmax(logits, dim=-1)[0]
+    clean_prediction = processor.decode(pred_ids).replace("[PAD]", "")
+
+    return clean_prediction

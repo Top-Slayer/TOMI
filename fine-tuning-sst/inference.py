@@ -29,7 +29,7 @@ with Timer():
     model.to(device)
 
     # speech_array, sampling_rate = torchaudio.load("sperated_dataset/test_clips/0.wav")
-    speech_array, sampling_rate = torchaudio.load("test/test.wav")
+    speech_array, sampling_rate = torchaudio.load("test/gg.wav")
     if speech_array.shape[0] > 1:
         speech_array = speech_array.mean(dim=0)
     speech_array = speech_array.numpy()

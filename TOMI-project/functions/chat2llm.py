@@ -55,11 +55,11 @@ def chat(user_prompt: str, debug=False):
                 print(json_data["response"], end="", flush=True)
 
                 if json_data["response"] in " ":
-                    tts.transcript(sentense)
+                    tts.synthesize(sentense)
                     sentense = ""
 
             except json.JSONDecodeError as e:
                 print(f"\nJSON Decode Error: {e}")
 
     if sentense != "":
-        tts.transcript(sentense)
+        tts.synthesize(sentense)
