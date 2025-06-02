@@ -1,61 +1,48 @@
-use axum::{
-    extract::ws::{Message, WebSocket, WebSocketUpgrade},
-    response::IntoResponse,
-    routing::get,
-    Router,
-};
-use std::net::SocketAddr;
-use tokio::fs::File;
-use tokio::io::AsyncWriteExt;
-use futures::{StreamExt};
+use tonic::{transport::Server, Request, Response, Status};
+use audio::audio_service_server::{AudioService, AudioServiceServer};
+use audio::{AudioData, AudioResponse};
 
 pub mod audio {
-    include!(concat!(env!("OUT_DIR"), "/audio.rs"));
+    tonic::include_proto!("audio");
+}
+
+#[derive(Debug, Default)]
+pub struct MyAudioService {}
+
+#[tonic::async_trait]
+impl AudioService for MyAudioService {
+    async fn upload_audio(
+        &self,
+        request: Request<AudioData>,
+    ) -> Result<Response<AudioResponse>, Status> {
+        let data = request.into_inner();
+
+        println!("Format: {}, Sample rate: {}", data.format, data.sample_rate);
+        println!("Audio size: {} bytes", data.audio_bytes.len());
+
+        // You can write the audio to a file
+        std::fs::write("output.wav", &data.audio_bytes)
+            .expect("Failed to write audio file");
+
+        let reply = AudioResponse {
+            message: "Audio received successfully!".to_string(),
+        };
+
+        Ok(Response::new(reply))
+    }
 }
 
 #[tokio::main]
-async fn main() {
-    let audio = audio::AudioPacket{
-        data: vec![1, 2, 3, 4],
-        sample_rate: 16000,
-        channels: 1,
-        format: "wav".to_string(),
-    };
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let addr = "[::1]:50051".parse()?;
+    let service = MyAudioService::default();
 
-    let app = Router::new().route("/ws", get(handle_ws_upgrade));
+    println!("AudioService server listening on {}", addr);
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-    println!("Listening on: {}", addr);
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await
-        .unwrap();
-}
+    Server::builder()
+        .add_service(AudioServiceServer::new(service))
+        .serve(addr)
+        .await?;
 
-async fn handle_ws_upgrade(ws: WebSocketUpgrade) -> impl IntoResponse {
-    ws.on_upgrade(handle_socket)
-}
-
-async fn handle_socket(mut socket: WebSocket) {
-    let mut file = File::create("received_audio.wav")
-        .await
-        .expect("Failed to create file");
-
-    while let Some(Ok(msg)) = socket.next().await {
-        match msg {
-            Message::Binary(data) => {
-                if let Err(e) = file.write_all(&data).await {
-                    eprintln!("Write error: {}", e);
-                    break;
-                }
-            }
-            Message::Close(_) => {
-                println!("Connection closed");
-                break;
-            }
-            _ => {}
-        }
-    }
-
-    println!("Done receiving audio");
+    Ok(())
 }

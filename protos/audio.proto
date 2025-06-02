@@ -2,9 +2,16 @@ syntax = "proto3";
 
 package audio;
 
-message AudioPacket {
-  bytes data = 1;
-  uint32 sample_rate = 2;
-  uint32 channels = 3;
-  string format = 4;
+service AudioService {
+  rpc UploadAudio(AudioData) returns (AudioResponse);
+}
+
+message AudioData {
+  string format = 1;
+  int32 sample_rate = 2;
+  bytes audio_bytes = 3;
+}
+
+message AudioResponse {
+  string message = 1;
 }

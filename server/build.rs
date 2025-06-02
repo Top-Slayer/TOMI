@@ -1,3 +1,3 @@
 fn main() {
-    prost_build::compile_protos(&["../protos/audio.proto"], &["../protos"]).unwrap();
+    tonic_build::compile_protos("../protos/audio.proto").unwrap();
 }
