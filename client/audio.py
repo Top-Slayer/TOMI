@@ -10,7 +10,7 @@ import wave
 
 
 SAMPLE_RATE = 16000  # Hz
-CHANNELS = 1
+CHANNELS = 1 # Mono
 CHUNK_DURATION = 0.1  # seconds
 SILENCE_THRESHOLD = 0.001  # Adjust based on noise floor
 MAX_SILENCE_DURATION = 3.0  # seconds
@@ -21,7 +21,7 @@ def _is_silent(audio_chunk, threshold):
     return volume < threshold
 
 
-def record() -> io.BytesIO:
+def record() -> bytes:
     print("🎙️ Recording... Speak now.")
     frames = []
     silence_start = None

@@ -3,6 +3,8 @@ import time
 import json
 from . import tts
 
+
+model_name = "gemma3:27b"
 system_prompt = """
       You are a helpful assistant specialized in Lao academic and historical knowledge.
 
@@ -12,6 +14,7 @@ system_prompt = """
       - Respond in full sentences using formal language.
       - Your name is "ທູມິ"
 """
+
 
 def _timer(choice: int):
     if choice == 1:
@@ -34,7 +37,7 @@ def chat(user_prompt: str, debug=False):
         response = requests.post(
             "http://localhost:11434/api/generate",
             json={
-                "model": "gemma3:27b",
+                "model": model_name,
                 "prompt": prompt,
                 "num_predict": 100,
                 "stream": True,

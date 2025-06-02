@@ -1,0 +1,1 @@
+ffmpeg -i $1 -ar 16000 -af aresample=resampler=soxr output.wav

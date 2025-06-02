@@ -5,40 +5,65 @@ import time
 # from function import PlaySound
 from functions import chat2llm
 from functions import tts, stt
-from functions import voice_changer as vc
+
+# from functions import voice_changer as vc
 from shared_datas import mem
 import numpy as np
+import mmap, struct, posix_ipc
 
 
 def audio_reader(name, shape, dtype, offsets):
     shm = shared_memory.SharedMemory(name=name)
-    shared_array = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
+    # shared_array = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
 
     while True:
         print(len(offsets))
         for i, (start, length) in enumerate(offsets):
-            audio = shared_array[start : start + length]
-            print(
-                f"Audio[{i}] (length={length}) => {audio[:10]}..."
-            )
+            audio = mem.shared_array[start : start + length]
+            print(f"Audio[{i}] (length={length}) => {audio[:10]}...")
         time.sleep(1)
+
+
+def view_mem():
+    SHM_NAME = "/in_shm"
+    SEM_NAME = "/signal"
+    SIZE = 100 * 1024 * 1024
+
+    shm = posix_ipc.SharedMemory(SHM_NAME)
+    sem = posix_ipc.Semaphore(SEM_NAME)
+
+    mem = mmap.mmap(shm.fd, SIZE, mmap.MAP_SHARED, mmap.PROT_READ)
+
+    while True:
+        print("⏳ Waiting for data...")
+        sem.acquire()
+
+        data_len_bytes = mem[0:4]
+        data_len = struct.unpack("i", data_len_bytes)[0]
+
+        data = mem[4:4+data_len]
+
+        print(f"✅ Received {data_len} bytes: {data[:32]}...")
 
 
 if __name__ == "__main__":
     try:
-        shm_name, shape, dtype, offsets, _ = mem.get_shared_info()
-        p = Process(target=vc.convert, args=(shm_name, shape, dtype, offsets))
-        p.start()
+        # p = Process(target=view_mem)
+        # p.start()
 
         text = stt.transcript("../fine-tuning-sst/test/atoon_audio.wav")
-        print(text)
-        chat2llm.chat(text)
+        print("stt output:", text)
+        # tts.synthesize(text)
+        # chat2llm.chat(text)
 
-        time.sleep(10)
+        while 1:
+            tts.synthesize(text)
+            time.sleep(10)
+            pass
     except KeyboardInterrupt:
         pass
     finally:
-        p.terminate()
+        # p.terminate()
         mem.close()
 
 # threading.Thread(target=EmotionalRecognition.openCamera).start()

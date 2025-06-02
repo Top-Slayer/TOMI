@@ -3,6 +3,8 @@ import torch
 import numpy as np
 from shared_datas import mem
 import scipy
+from scipy.io.wavfile import write as wav_write
+import io
 
 model = VitsModel.from_pretrained("facebook/mms-tts-lao")
 tokenizer = AutoTokenizer.from_pretrained("facebook/mms-tts-lao")
@@ -13,15 +15,20 @@ def synthesize(text: str):
     inputs["input_ids"] = inputs["input_ids"].long()
 
     with torch.no_grad():
-        output = model(**inputs).waveform
+        int16_datas = model(**inputs).waveform
 
-    output = (output.cpu().numpy() * 32767).astype(np.int16).squeeze()
+    int16_datas = (int16_datas.cpu().numpy() * 32767).astype(np.int16).squeeze()
 
-    print(f"\ntts: {output} size: {len(output)} shape: {output.shape}")
+    print(f"\ntts: {int16_datas} size: {len(int16_datas)} shape: {int16_datas.shape}")
 
-    scipy.io.wavfile.write("out_folder/techno.wav", rate=model.config.sampling_rate, data=output)
+    # test write wav file
+    scipy.io.wavfile.write("out_folder/techno.wav", rate=model.config.sampling_rate, data=int16_datas)
 
-    mem.write_audio(output)
+    buffer = io.BytesIO()
+    wav_write(buffer, model.config.sampling_rate, int16_datas)
+    buffer.seek(0)
+
+    mem.write_audio(buffer.getvalue())
 
 
 # text2speech("ມື້ນີ້ເມື່ອຍບໍໃຫ້ໂທມິຊ່ວຍຫຍັງນາຍທ່ານໄດ້ແດ່")

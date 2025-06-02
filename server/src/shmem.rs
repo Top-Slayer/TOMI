@@ -1,80 +1,56 @@
-use byteorder::{ByteOrder, LittleEndian};
-use ndarray::ArrayView;
-use shared_memory::*;
-use std::fs;
-use std::slice;
-use std::{thread, time::Duration};
-use memmap2::{MmapMut, MmapOptions};
-use std::fs::OpenOptions;
+use hound::{SampleFormat, WavSpec, WavWriter};
+use libc::{close, mmap, sem_open, sem_wait, shm_open, MAP_SHARED, O_RDONLY, PROT_READ};
+use std::{ffi::CString, fs::File, io::BufWriter, ptr, slice};
 
-// try to access via share memory that allocate specific only
+pub fn read_audio() {
+    let shm_name = CString::new("/in_shm").unwrap();
+    let sem_name = CString::new("/signal").unwrap();
+    let size = 100 * 1024 * 1024;
 
-pub fn write() {
-   let file = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .open("/dev/shm/in_shm")
-        .expect("Could not open");
-
-    let mut mmap = unsafe {
-        MmapOptions::new()
-            .len(100 * 1024 * 1024) // 100 MiB
-            .map_mut(&file)
-            .expect("Failed to mmap")
-    };
-
-    // Write a few i16 values (2 bytes each)
-    let buffer: &mut [i16] = unsafe {
-        std::slice::from_raw_parts_mut(mmap.as_mut_ptr() as *mut i16, 100 * 1024 * 1024 / 2)
-    };
-
-    buffer[0..5].copy_from_slice(&[1, 2, 3, 4, 5]);
-
-    println!("✅ Wrote to shared memory!");
-}
-
-pub fn read() -> Result<(), Box<dyn std::error::Error>> {
-    let offsets: &Vec<(usize, usize)> = &vec![];
-    let shape: &[usize] = &[];
-
-    let shm = ShmemConf::new().os_id("out_shm").open()?;
-    let total_elements: usize = shape.iter().product();
-    let audio_data: &[f32] = unsafe {
-        let ptr = shm.as_ptr() as *const f32;
-        slice::from_raw_parts(ptr, total_elements)
-    };
-
-    loop {
-        println!("Offsets len: {}", offsets.len());
-        for (i, (start, length)) in offsets.iter().enumerate() {
-            let end = start + length;
-            if end > audio_data.len() {
-                println!("Invalid offset range: {} to {}", start, end);
-                continue;
-            }
-
-            let segment = &audio_data[*start..end];
-            let preview: Vec<f32> = segment.iter().take(10).cloned().collect();
-            println!("Audio[{}] (length={}) => {:?}...", i, length, preview);
+    unsafe {
+        let shm_fd = shm_open(shm_name.as_ptr(), O_RDONLY, 0);
+        if shm_fd == -1 {
+            panic!("❌ Failed to open shared memory");
         }
 
-        thread::sleep(Duration::from_secs(1));
+        let mem_ptr = mmap(ptr::null_mut(), size, PROT_READ, MAP_SHARED, shm_fd, 0);
+        if mem_ptr == libc::MAP_FAILED {
+            panic!("❌ Failed to mmap");
+        }
+
+        let sem = sem_open(sem_name.as_ptr(), 0);
+        if sem == libc::SEM_FAILED {
+            panic!("❌ Failed to open semaphore");
+        }
+
+        loop {
+            println!("🕐 Waiting for signal...");
+            sem_wait(sem);
+            println!("✅ Received signal");
+
+            let sample_count = 60 * 1024 / std::mem::size_of::<i16>();
+            let pcm_data = slice::from_raw_parts(mem_ptr as *const i16, sample_count);
+
+            let spec = WavSpec {
+                channels: 1,
+                sample_rate: 16000,
+                bits_per_sample: 16,
+                sample_format: SampleFormat::Int,
+            };
+
+            let file = File::create("output.wav").expect("❌ Failed to create file");
+            let writer = BufWriter::new(file);
+
+            let mut wav_writer = WavWriter::new(writer, spec).expect("❌ Failed to write header");
+
+            for &sample in pcm_data {
+                wav_writer
+                    .write_sample(sample)
+                    .expect("❌ Failed to write sample");
+            }
+
+            wav_writer.finalize().expect("❌ Failed to finalize WAV");
+            println!("Success write")
+        }
     }
 }
-
-// pub fn name() {
-//     pyo3::prepare_freethreaded_python();
-
-//     Python::with_gil(|py| {
-//         let module = PyModule::from_code(
-//             py,
-//             include_str!("../../TOMI-project/interface.py"),
-//             "interface.py",
-//             "interface",
-//         )
-//         .unwrap();
-
-//         let val: i32 = module.getattr("shm_name").unwrap().extract().unwrap();
-//         println!("my_value: {}", val);
-//     });
-// }

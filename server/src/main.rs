@@ -2,6 +2,8 @@ use tonic::{transport::Server, Request, Response, Status};
 use audio::audio_service_server::{AudioService, AudioServiceServer};
 use audio::{AudioData, AudioResponse};
 
+mod shmem;
+
 pub mod audio {
     tonic::include_proto!("audio");
 }
@@ -34,6 +36,10 @@ impl AudioService for MyAudioService {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    tokio::spawn(async {
+        shmem::read_audio();
+    });
+
     let addr = "[::1]:50051".parse()?;
     let service = MyAudioService::default();
 
