@@ -48,18 +48,15 @@ def view_mem():
 
 if __name__ == "__main__":
     try:
-        # p = Process(target=view_mem)
-        # p.start()
-
-        text = stt.transcript("../fine-tuning-sst/test/atoon_audio.wav")
-        print("stt output:", text)
-        # tts.synthesize(text)
-        # chat2llm.chat(text)
-
         while 1:
-            tts.synthesize(text)
-            time.sleep(10)
-            pass
+            # p = Process(target=view_mem)
+            # p.start()
+
+            text = stt.transcript(mem.read_audio())
+            print("stt output:", text)
+            # tts.synthesize(text)
+            chat2llm.chat(text)
+
     except KeyboardInterrupt:
         pass
     finally:

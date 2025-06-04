@@ -1,6 +1,8 @@
-use tonic::{transport::Server, Request, Response, Status};
+use tonic::transport::{Server, ServerTlsConfig, Identity};
+use tonic::{Request, Response, Status};
 use audio::audio_service_server::{AudioService, AudioServiceServer};
 use audio::{AudioData, AudioResponse};
+use std::fs;
 
 mod shmem;
 
@@ -22,9 +24,11 @@ impl AudioService for MyAudioService {
         println!("Format: {}, Sample rate: {}", data.format, data.sample_rate);
         println!("Audio size: {} bytes", data.audio_bytes.len());
 
-        // You can write the audio to a file
-        std::fs::write("output.wav", &data.audio_bytes)
-            .expect("Failed to write audio file");
+        let bytes_metadata = shmem::Metadata {
+            bytes: data.audio_bytes,
+        };
+
+        unsafe { shmem::write_metadata_to_shm(&bytes_metadata); }
 
         let reply = AudioResponse {
             message: "Audio received successfully!".to_string(),
@@ -36,16 +40,26 @@ impl AudioService for MyAudioService {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    tokio::spawn(async {
-        shmem::read_audio();
-    });
+    let cert = fs::read("server.pem")?;
+    let key = fs::read("server.key")?;
+    let identity = Identity::from_pem(cert, key);
 
-    let addr = "[::1]:50051".parse()?;
+    let addr = "[::]:50051".parse()?;
     let service = MyAudioService::default();
+
+    // tokio::spawn(async {
+    //     shmem::read_audio();
+    // });
 
     println!("AudioService server listening on {}", addr);
 
     Server::builder()
+        // .tls_config(tonic::transport::ServerTlsConfig::new()
+        //     .identity(tonic::transport::Identity::from_pem(
+        //         std::fs::read("server.pem")?,
+        //         std::fs::read("server.key")?,
+        //     ))
+        // )?
         .add_service(AudioServiceServer::new(service))
         .serve(addr)
         .await?;

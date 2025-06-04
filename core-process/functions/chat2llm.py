@@ -4,7 +4,8 @@ import json
 from . import tts
 
 
-model_name = "gemma3:27b"
+# model_name = "gemma3:27b" # maximum
+model_name = "gemma3:12b"
 system_prompt = """
       You are a helpful assistant specialized in Lao academic and historical knowledge.
 

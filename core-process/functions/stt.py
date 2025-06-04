@@ -1,6 +1,7 @@
 from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
 import torch
 import torchaudio
+import io
 
 
 model_path = "../fine-tuning-sst/model/checkpoint-2130"
@@ -15,8 +16,9 @@ print("STT model path:", model_path)
 print("Process device:", device)
 
 
-def transcript(path: str) -> str:
-    speech_array, sampling_rate = torchaudio.load(path)
+def transcript(wav_bytes: bytes) -> str:
+    buffer = io.BytesIO(wav_bytes)
+    speech_array, sampling_rate = torchaudio.load(buffer)
 
     if speech_array.shape[0] > 1:
         speech_array = speech_array.mean(dim=0)

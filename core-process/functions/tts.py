@@ -22,13 +22,13 @@ def synthesize(text: str):
     print(f"\ntts: {int16_datas} size: {len(int16_datas)} shape: {int16_datas.shape}")
 
     # test write wav file
-    scipy.io.wavfile.write("out_folder/techno.wav", rate=model.config.sampling_rate, data=int16_datas)
+    # scipy.io.wavfile.write("out_folder/techno.wav", rate=model.config.sampling_rate, data=int16_datas)
 
-    buffer = io.BytesIO()
-    wav_write(buffer, model.config.sampling_rate, int16_datas)
-    buffer.seek(0)
+    # buffer = io.BytesIO()
+    # wav_write(buffer, model.config.sampling_rate, int16_datas)
+    # buffer.seek(0)
 
-    mem.write_audio(buffer.getvalue())
+    # mem.write_audio(buffer.getvalue())
 
 
 # text2speech("ມື້ນີ້ເມື່ອຍບໍໃຫ້ໂທມິຊ່ວຍຫຍັງນາຍທ່ານໄດ້ແດ່")
