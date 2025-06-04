@@ -8,3 +8,5 @@ server/target
 core-process/LLM/sentences/
 core-process/functions/wav2vec2.onnx
 .env
+server/server.key
+server/server.pem

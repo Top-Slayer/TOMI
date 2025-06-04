@@ -10,24 +10,21 @@ OUT_SIZE = 100 * MB
 
 IN_SHM_NAME = "/in_shm"
 OUT_SHM_NAME = "/out_shm"
-SEM_NAME = "/signal"
 
-# metadata = {
-#     lengths
-#     da
-# }
+IN_SEM_NAME = "/in_signal"
+OUT_SEM_NAME = "/out_signal"
+
 
 in_shm = posix_ipc.SharedMemory(IN_SHM_NAME, posix_ipc.O_CREAT, size=IN_SIZE)
 out_shm = posix_ipc.SharedMemory(OUT_SHM_NAME, posix_ipc.O_CREAT, size=OUT_SIZE)
 
-sem = posix_ipc.Semaphore(SEM_NAME, posix_ipc.O_CREAT, initial_value=0)
-
-out_mem = mmap.mmap(out_shm.fd, OUT_SIZE, mmap.MAP_SHARED, mmap.PROT_WRITE)
+in_sem = posix_ipc.Semaphore(IN_SEM_NAME, posix_ipc.O_CREAT, initial_value=0)
+out_sem = posix_ipc.Semaphore(OUT_SEM_NAME, posix_ipc.O_CREAT, initial_value=0)
 
 
 def read_audio():
     print("Waiting for semaphore...")
-    sem.acquire()
+    in_sem.acquire()
     print("Semaphore acquired!")
 
     with mmap.mmap(in_shm.fd, IN_SIZE, mmap.MAP_SHARED, mmap.PROT_READ) as mem:
@@ -36,29 +33,47 @@ def read_audio():
         lengths = struct.unpack("<Q", mem.read(8))[0]
         data = mem.read(lengths)
 
-        print(f"lengths: {lengths}")
-        print(f"bytes: {data[:100]}")
+        # print(f"lengths: {lengths}")
+        # print(f"bytes: {data[:100]}...")
 
         return data
 
 
-def write_audio(datas: bytes):
-    length = len(datas)
-    header = struct.pack("I", length)
-    print(len(header))
-    out_mem.seek(0)
-    out_mem.write(header + datas)
-    sem.release()
+write_offset = 8
+write_count = 0
 
-    # out_mem[: len(datas)] = datas
-    # sem.release()
+
+def write_audio(wav_bytes: bytes):
+    with mmap.mmap(out_shm.fd, OUT_SIZE, mmap.MAP_SHARED, mmap.PROT_WRITE) as mem:
+        global write_offset, write_count
+
+        write_count += 1
+        length = len(wav_bytes)
+
+        header = struct.pack("Q", length)
+        entry = header + wav_bytes
+        entry_size = len(entry)
+
+        if write_offset + entry_size > OUT_SIZE:
+            raise ValueError("Shared memory full")
+
+        mem.seek(0)
+        mem.write(struct.pack("Q", write_count))
+
+        mem.seek(write_offset)
+        mem.write(entry)
+        mem.flush()
+
+        write_offset += entry_size
+        out_sem.release()
 
 
 def close():
     in_shm.close_fd()
-    out_mem.close()
     out_shm.close_fd()
-    sem.close()
+    in_sem.close()
+    out_sem.close()
     posix_ipc.unlink_shared_memory(IN_SHM_NAME)
     posix_ipc.unlink_shared_memory(OUT_SHM_NAME)
-    posix_ipc.unlink_semaphore(SEM_NAME)
+    posix_ipc.unlink_semaphore(IN_SEM_NAME)
+    posix_ipc.unlink_semaphore(OUT_SEM_NAME)
