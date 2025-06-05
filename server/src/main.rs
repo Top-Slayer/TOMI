@@ -3,6 +3,10 @@ use tonic::{Request, Response, Status};
 use audio::audio_service_server::{AudioService, AudioServiceServer};
 use audio::{AudioData, AudioResponse};
 use std::fs;
+use std::{thread, time};
+
+#[macro_use]
+mod logging;
 
 mod shmem;
 
@@ -21,14 +25,10 @@ impl AudioService for MyAudioService {
     ) -> Result<Response<AudioResponse>, Status> {
         let data = request.into_inner();
 
-        println!("Format: {}, Sample rate: {}", data.format, data.sample_rate);
-        println!("Audio size: {} bytes", data.audio_bytes.len());
+        println!("{}", log_concat!("Format: {}, Sample rate: {}", data.format, data.sample_rate));
+        println!("{}", log_concat!("Audio size: {} bytes", data.audio_bytes.len()));
 
-        let bytes_metadata = shmem::Metadata {
-            bytes: data.audio_bytes,
-        };
-
-        unsafe { shmem::write_metadata_to_shm(&bytes_metadata); }
+        unsafe { shmem::write_bytes_to_shm(&data.audio_bytes); }
 
         let reply = AudioResponse {
             message: "Audio received successfully!".to_string(),
@@ -47,11 +47,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let addr = "[::]:50051".parse()?;
     let service = MyAudioService::default();
 
-    // tokio::spawn(async {
-    //     shmem::read_audio();
-    // });
+    tokio::spawn(async {
+        loop {
+            unsafe { shmem::read_bytes_from_shm(); }
+            thread::sleep(time::Duration::from_secs(5));
+        }
+    });
 
-    println!("AudioService server listening on {}", addr);
+    println!("{}", log_concat!("AudioService server listening on {}", addr));
 
     Server::builder()
         // .tls_config(tonic::transport::ServerTlsConfig::new()
