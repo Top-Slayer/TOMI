@@ -4,7 +4,7 @@ macro_rules! log_concat {
         let now = chrono::Utc::now().with_timezone(&chrono_tz::Asia::Vientiane);
         format!(
             "[{}] [SERVER]: {}",
-            now.format("%d-%m-%Y %H:%M:%S"),
+            now.format("%d-%m-%Y %H:%M:%S.%f"),
             format!($($arg)*)
         )
     }};

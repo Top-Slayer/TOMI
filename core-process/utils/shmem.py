@@ -1,7 +1,5 @@
-import numpy as np
-import json
-from multiprocessing import shared_memory, Manager
-import mmap, struct, time, posix_ipc
+import mmap, struct, posix_ipc
+import logging as lg
 
 MB = 1024 * 1024
 
@@ -22,10 +20,10 @@ in_sem = posix_ipc.Semaphore(IN_SEM_NAME, posix_ipc.O_CREAT, initial_value=0)
 out_sem = posix_ipc.Semaphore(OUT_SEM_NAME, posix_ipc.O_CREAT, initial_value=0)
 
 
-def read_audio():
-    print("Waiting for semaphore...")
+def read_bytes_from_shm():
+    print(lg.log_concat("Waiting for semaphore..."))
     in_sem.acquire()
-    print("Semaphore acquired!")
+    print(lg.log_concat("Semaphore acquired!"))
 
     with mmap.mmap(in_shm.fd, IN_SIZE, mmap.MAP_SHARED, mmap.PROT_READ) as mem:
         mem.seek(0)
@@ -43,7 +41,7 @@ write_offset = 8
 write_count = 0
 
 
-def write_audio(wav_bytes: bytes):
+def write_bytes_to_shm(wav_bytes: bytes):
     with mmap.mmap(out_shm.fd, OUT_SIZE, mmap.MAP_SHARED, mmap.PROT_WRITE) as mem:
         global write_offset, write_count
 
@@ -55,7 +53,7 @@ def write_audio(wav_bytes: bytes):
         entry_size = len(entry)
 
         if write_offset + entry_size > OUT_SIZE:
-            raise ValueError("Shared memory full")
+            raise ValueError(lg.log_concat("Shared memory full"))
 
         mem.seek(0)
         mem.write(struct.pack("Q", write_count))

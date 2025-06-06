@@ -1,7 +1,7 @@
 from transformers import VitsModel, AutoTokenizer
 import torch
 import numpy as np
-from shared_datas import mem
+from utils import shmem
 import scipy
 from scipy.io.wavfile import write as wav_write
 import io
@@ -24,11 +24,11 @@ def synthesize(text: str):
     # test write wav file
     # scipy.io.wavfile.write("out_folder/techno.wav", rate=model.config.sampling_rate, data=int16_datas)
 
-    # buffer = io.BytesIO()
-    # wav_write(buffer, model.config.sampling_rate, int16_datas)
-    # buffer.seek(0)
+    buffer = io.BytesIO()
+    wav_write(buffer, model.config.sampling_rate, int16_datas)
+    buffer.seek(0)
 
-    # mem.write_audio(buffer.getvalue())
+    shmem.write_bytes_to_shm(buffer.getvalue())
 
 
 # text2speech("ມື້ນີ້ເມື່ອຍບໍໃຫ້ໂທມິຊ່ວຍຫຍັງນາຍທ່ານໄດ້ແດ່")

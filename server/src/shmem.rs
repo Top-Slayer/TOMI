@@ -6,7 +6,6 @@ use std::{ffi::CString, fs::File, io::BufWriter, ptr, ptr::read_unaligned, slice
 
 use std::io::Write;
 
-
 use crate::log_concat;
 
 const IN_SHM: &str = "/in_shm";
@@ -56,6 +55,14 @@ pub unsafe fn write_bytes_to_shm(bytes: &Vec<u8>) {
     sem_close(sem);
 }
 
+fn vec_to_str(bytes: &[u8]) -> String {
+    bytes
+        .iter()
+        .map(|b| format!("{:02X}", b))
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 pub unsafe fn read_bytes_from_shm() -> std::io::Result<()> {
     let ptr = create_and_map_shm(OUT_SHM, false, OUT_SIZE);
     let count = read_unaligned(ptr as *const u64);
@@ -82,23 +89,21 @@ pub unsafe fn read_bytes_from_shm() -> std::io::Result<()> {
         let wav_bytes = std::slice::from_raw_parts(ptr.add(offset), length);
         wav_vec = wav_bytes.to_vec();
 
-        let hex_bytes: String = wav_vec
-            .iter()
-            .take(20)
-            .map(|b| format!("{:02X}", b))
-            .collect::<Vec<_>>()
-            .join(" ");
-
-        println!("index: {}", i);
-        println!("length: {}", length);
-        println!("wav_bytes: {:?}\n", hex_bytes);
-
-        // println!(
-        //     "{}",
-        //     log_concat!("Metadata[{}]: {:?} ({} bytes)", i, metadata, length)
-        // );
+        println!("{}", log_concat!("Index: {}", i));
+        println!("{}", log_concat!("Length: {}", length));
+        println!(
+            "{}",
+            log_concat!("Wav_bytes: {}\n", {
+                format!(
+                    "{} ... {}",
+                    vec_to_str(&wav_vec[..wav_vec.len().min(10)]),
+                    vec_to_str(&wav_vec[wav_vec.len().saturating_sub(10)..])
+                )
+            })
+        );
 
         offset += length;
+        println!("{}", log_concat!("Used storage space in '{}': {:.2} %", OUT_SHM, offset as f64 * 100.0 / OUT_SIZE as f64));
     }
 
     munmap(ptr as *mut _, OUT_SIZE);
