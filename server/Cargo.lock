@@ -1025,11 +1025,13 @@ dependencies = [
  "bincode",
  "chrono",
  "chrono-tz",
+ "futures-core",
  "hound",
  "libc",
  "prost",
  "serde",
  "tokio",
+ "tokio-stream",
  "tonic",
  "tonic-build",
 ]

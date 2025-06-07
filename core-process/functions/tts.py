@@ -2,6 +2,7 @@ from transformers import VitsModel, AutoTokenizer
 import torch
 import numpy as np
 from utils import shmem
+from utils import logging as lg
 import scipy
 from scipy.io.wavfile import write as wav_write
 import io
@@ -19,7 +20,7 @@ def synthesize(text: str):
 
     int16_datas = (int16_datas.cpu().numpy() * 32767).astype(np.int16).squeeze()
 
-    print(f"\ntts: {int16_datas} size: {len(int16_datas)} shape: {int16_datas.shape}")
+    print(lg.log_concat(f"TTS output info: {int16_datas} size: {len(int16_datas)} shape: {int16_datas.shape}"))
 
     # test write wav file
     # scipy.io.wavfile.write("out_folder/techno.wav", rate=model.config.sampling_rate, data=int16_datas)
@@ -29,6 +30,7 @@ def synthesize(text: str):
     buffer.seek(0)
 
     shmem.write_bytes_to_shm(buffer.getvalue())
+
 
 
 # text2speech("ມື້ນີ້ເມື່ອຍບໍໃຫ້ໂທມິຊ່ວຍຫຍັງນາຍທ່ານໄດ້ແດ່")

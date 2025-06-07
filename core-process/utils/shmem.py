@@ -1,5 +1,5 @@
 import mmap, struct, posix_ipc
-import logging as lg
+from . import logging as lg
 
 MB = 1024 * 1024
 
@@ -21,18 +21,16 @@ out_sem = posix_ipc.Semaphore(OUT_SEM_NAME, posix_ipc.O_CREAT, initial_value=0)
 
 
 def read_bytes_from_shm():
-    print(lg.log_concat("Waiting for semaphore..."))
+    print(lg.log_concat(f"Waiting for semaphore in '{IN_SEM_NAME}'"))
     in_sem.acquire()
-    print(lg.log_concat("Semaphore acquired!"))
+    print(lg.log_concat(f"Semaphore acquired in '{IN_SEM_NAME}'"))
 
     with mmap.mmap(in_shm.fd, IN_SIZE, mmap.MAP_SHARED, mmap.PROT_READ) as mem:
         mem.seek(0)
 
         lengths = struct.unpack("<Q", mem.read(8))[0]
         data = mem.read(lengths)
-
-        # print(f"lengths: {lengths}")
-        # print(f"bytes: {data[:100]}...")
+        # print(lg.log_concat(f"Used storage space in '{IN_SEM_NAME}: {}%'"))
 
         return data
 
@@ -46,10 +44,9 @@ def write_bytes_to_shm(wav_bytes: bytes):
         global write_offset, write_count
 
         write_count += 1
-        length = len(wav_bytes)
 
-        header = struct.pack("Q", length)
-        entry = header + wav_bytes
+        length = struct.pack("Q", len(wav_bytes))
+        entry = length + wav_bytes
         entry_size = len(entry)
 
         if write_offset + entry_size > OUT_SIZE:
@@ -64,6 +61,23 @@ def write_bytes_to_shm(wav_bytes: bytes):
 
         write_offset += entry_size
         out_sem.release()
+        print(lg.log_concat(f"Release semaphore of '{OUT_SEM_NAME}'"))
+
+
+def add_end_to_shm():
+    with mmap.mmap(out_shm.fd, OUT_SIZE, mmap.MAP_SHARED, mmap.PROT_WRITE) as mem:
+        global write_offset, write_count
+        mem.seek(write_offset)
+        mem.write(b"<END>")
+        mem.flush()
+
+        mem.seek(write_offset)
+        print(lg.log_concat(f"Read at {write_offset + 5} bytes"))
+        data = mem.read(5)
+        print(data)
+
+        write_offset = 8
+        write_count = 0
 
 
 def close():

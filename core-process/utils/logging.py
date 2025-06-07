@@ -8,4 +8,4 @@ def log_concat(*args) -> str:
     dt = datetime.fromtimestamp(ns / 1e9, tz)
     message = " ".join(map(str, args))
 
-    return f"[{dt.strftime('%Y-%m-%d %H:%M:%S')}.{f'{ns % 1_000_000_000:09d}'}] [CORE]: {message}"
+    return f"[{dt.strftime('%d-%m-%Y %H:%M:%S')}.{f'{ns % 1_000_000_000:09d}'}] [CORE]: {message}"

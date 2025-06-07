@@ -2,8 +2,6 @@ import time
 from functions import tts, stt
 from utils import shmem
 from utils import logging as lg
-import numpy as np
-import mmap, struct, posix_ipc
 
 model_name = "gemma3:12b"
 system_prompt = """
@@ -25,8 +23,10 @@ if __name__ == "__main__":
 
             in_bytes = shmem.read_bytes_from_shm()
             text = stt.transcript(in_bytes)
-            print("stt output:", text)
-            tts.synthesize(text)
+            print(lg.log_concat("STT output:", text))
+            tts.synthesize("ສະບາຍດີຂ້ອຍຊື້່ໂທມິ")
+            tts.synthesize("ເປັນຜູ້ຊ່ວຍສ່ວນຕົວຂອງເຈົ້າ")
+            shmem.add_end_to_shm()
             # chat2llm.chat(text)
 
             time.sleep(10)

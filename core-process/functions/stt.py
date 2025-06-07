@@ -2,6 +2,7 @@ from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
 import torch
 import torchaudio
 import io
+from utils import logging as lg
 
 
 model_path = "../fine-tuning-sst/model/checkpoint-2130"
@@ -12,8 +13,8 @@ processor = Wav2Vec2Processor.from_pretrained(model_path)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
-print("STT model path:", model_path)
-print("Process device:", device)
+print(lg.log_concat("STT model path:", model_path))
+print(lg.log_concat("Process device:", device))
 
 
 def transcript(wav_bytes: bytes) -> str:

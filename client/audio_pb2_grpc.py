@@ -5,7 +5,7 @@ import warnings
 
 import audio_pb2 as audio__pb2
 
-GRPC_GENERATED_VERSION = '1.71.0'
+GRPC_GENERATED_VERSION = '1.72.1'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -34,7 +34,7 @@ class AudioServiceStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.UploadAudio = channel.unary_unary(
+        self.UploadAudio = channel.unary_stream(
                 '/audio.AudioService/UploadAudio',
                 request_serializer=audio__pb2.AudioData.SerializeToString,
                 response_deserializer=audio__pb2.AudioResponse.FromString,
@@ -53,7 +53,7 @@ class AudioServiceServicer(object):
 
 def add_AudioServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'UploadAudio': grpc.unary_unary_rpc_method_handler(
+            'UploadAudio': grpc.unary_stream_rpc_method_handler(
                     servicer.UploadAudio,
                     request_deserializer=audio__pb2.AudioData.FromString,
                     response_serializer=audio__pb2.AudioResponse.SerializeToString,
@@ -80,7 +80,7 @@ class AudioService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(
+        return grpc.experimental.unary_stream(
             request,
             target,
             '/audio.AudioService/UploadAudio',
