@@ -26,6 +26,8 @@ if __name__ == "__main__":
             print(lg.log_concat("STT output:", text))
             tts.synthesize("ສະບາຍດີຂ້ອຍຊື້່ໂທມິ")
             tts.synthesize("ເປັນຜູ້ຊ່ວຍສ່ວນຕົວຂອງເຈົ້າ")
+            # shmem.write_bytes_to_shm(b'ggez')
+            # shmem.write_bytes_to_shm(b'juy')
             shmem.add_end_to_shm()
             # chat2llm.chat(text)
 

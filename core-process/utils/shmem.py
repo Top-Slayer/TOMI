@@ -72,9 +72,11 @@ def add_end_to_shm():
         mem.flush()
 
         mem.seek(write_offset)
-        print(lg.log_concat(f"Read at {write_offset + 5} bytes"))
+        print(lg.log_concat(f"Write end-bytes at {write_offset}-{write_offset + 5}"))
         data = mem.read(5)
         print(data)
+
+        out_sem.release()
 
         write_offset = 8
         write_count = 0

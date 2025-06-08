@@ -1,7 +1,6 @@
 use bincode;
-// use hound::{SampleFormat, WavSpec, WavWriter};
 use libc::*;
-use std::{ffi::CString, ptr, ptr::read_unaligned};
+use std::{ffi::CString, ptr, ptr::read_unaligned, sync::Mutex};
 
 use crate::log_concat;
 
@@ -39,6 +38,15 @@ pub unsafe fn create_and_map_shm(name: &str, write: bool, size: usize) -> *mut u
     addr as *mut u8
 }
 
+pub unsafe fn clear_shm(name: &str) {
+    let ptr = unsafe { create_and_map_shm(name, true, OUT_SIZE) };
+    unsafe {
+        ptr::write_bytes(ptr, 0, OUT_SIZE);
+        libc::msync(ptr as *mut libc::c_void, OUT_SIZE, libc::MS_SYNC);
+        munmap(ptr as *mut libc::c_void, OUT_SIZE);
+    }
+}
+
 pub unsafe fn write_bytes_to_shm(bytes: &Vec<u8>) {
     let name = CString::new("/in_signal").expect(&log_concat!("CString failed"));
     let sem = unsafe { sem_open(name.as_ptr(), O_RDWR) };
@@ -65,7 +73,10 @@ fn vec_to_str(bytes: &[u8]) -> String {
         .join(" ")
 }
 
+static OFFSET: Mutex<usize> = Mutex::new(8);
+
 pub unsafe fn read_bytes_from_shm() -> Vec<u8> {
+    let mut offset = OFFSET.lock().unwrap();
     let name = CString::new("/out_signal").expect(&log_concat!("CString failed"));
     let sem = unsafe { sem_open(name.as_ptr(), O_RDWR) };
 
@@ -79,33 +90,55 @@ pub unsafe fn read_bytes_from_shm() -> Vec<u8> {
         log_concat!("Semaphore acquired in '{}'", name.to_str().unwrap())
     );
 
-    let mut offset: usize = 8;
     let ptr = unsafe { create_and_map_shm(OUT_SHM, false, OUT_SIZE) };
-    let slice = unsafe { std::slice::from_raw_parts(ptr.add(offset), 5) };
+    if *offset + 5 > OUT_SIZE {
+        println!(
+            "{}",
+            log_concat!(
+                "Out of bounds while reading end-bytes at offset {}",
+                *offset
+            )
+        );
+        unsafe { munmap(ptr as *mut _, OUT_SIZE) };
+        return vec![];
+    }
 
-    println!("{}", log_concat!("Read at {} bytes", offset + 5));
+    let slice = unsafe { std::slice::from_raw_parts(ptr.add(*offset), 5) };
+    println!(
+        "{}",
+        log_concat!("Read end-bytes at {}-{} bytes", *offset, *offset + 5)
+    );
 
     let result = String::from_utf8_lossy(slice).to_string();
     println!("{}", log_concat!("{:?}", result));
+    if result == "<END>" {
+        *offset = 8;
+        println!("{}", log_concat!("Speech end"));
+        unsafe { munmap(ptr as *mut _, OUT_SIZE) };
+        return vec![];
+    }
 
     let count = unsafe { read_unaligned(ptr as *const u64) };
     let mut wav_vec: Vec<u8> = Vec::new();
 
-    if offset + 8 > OUT_SIZE {
+    if *offset + 8 > OUT_SIZE {
         println!("{}", log_concat!("Out of bounds while reading length"));
     }
 
-    let length = unsafe { read_unaligned(ptr.add(offset) as *const u64) as usize };
-    offset += 8;
+    let length = unsafe { read_unaligned(ptr.add(*offset) as *const u64) as usize };
+    *offset += 8;
 
-    if offset + length > OUT_SIZE {
+    println!("{}", log_concat!("Lenght: {}", length));
+    println!("{}", log_concat!("Offset: {}", *offset));
+
+    if *offset + length > OUT_SIZE {
         println!(
             "{}",
             log_concat!("Out of bounds while reading bytes at entry {}", count)
         );
     }
 
-    let wav_bytes = unsafe { std::slice::from_raw_parts(ptr.add(offset), length) };
+    let wav_bytes = unsafe { std::slice::from_raw_parts(ptr.add(*offset), length) };
     wav_vec = wav_bytes.to_vec();
 
     println!("{}", log_concat!("Index: {}", count));
@@ -121,13 +154,13 @@ pub unsafe fn read_bytes_from_shm() -> Vec<u8> {
         })
     );
 
-    offset += length;
+    *offset += length;
     println!(
         "{}",
         log_concat!(
             "Used storage space in '{}': {:.2}%\n",
             OUT_SHM,
-            offset as f64 * 100.0 / OUT_SIZE as f64
+            *offset as f64 * 100.0 / OUT_SIZE as f64
         )
     );
 

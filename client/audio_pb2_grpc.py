@@ -34,8 +34,8 @@ class AudioServiceStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.UploadAudio = channel.unary_stream(
-                '/audio.AudioService/UploadAudio',
+        self.StreamAudio = channel.stream_stream(
+                '/audio.AudioService/StreamAudio',
                 request_serializer=audio__pb2.AudioData.SerializeToString,
                 response_deserializer=audio__pb2.AudioResponse.FromString,
                 _registered_method=True)
@@ -44,7 +44,7 @@ class AudioServiceStub(object):
 class AudioServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def UploadAudio(self, request, context):
+    def StreamAudio(self, request_iterator, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -53,8 +53,8 @@ class AudioServiceServicer(object):
 
 def add_AudioServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'UploadAudio': grpc.unary_stream_rpc_method_handler(
-                    servicer.UploadAudio,
+            'StreamAudio': grpc.stream_stream_rpc_method_handler(
+                    servicer.StreamAudio,
                     request_deserializer=audio__pb2.AudioData.FromString,
                     response_serializer=audio__pb2.AudioResponse.SerializeToString,
             ),
@@ -70,7 +70,7 @@ class AudioService(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def UploadAudio(request,
+    def StreamAudio(request_iterator,
             target,
             options=(),
             channel_credentials=None,
@@ -80,10 +80,10 @@ class AudioService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(
-            request,
+        return grpc.experimental.stream_stream(
+            request_iterator,
             target,
-            '/audio.AudioService/UploadAudio',
+            '/audio.AudioService/StreamAudio',
             audio__pb2.AudioData.SerializeToString,
             audio__pb2.AudioResponse.FromString,
             options,

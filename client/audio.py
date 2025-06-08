@@ -8,6 +8,7 @@ import audio_pb2
 import audio_pb2_grpc
 import wave
 import threading
+
 # import ssl
 # import socket
 
@@ -99,16 +100,16 @@ class AudioStreamer(threading.Thread):
         self.hostname = hostname
         self.audio_data = audio_data
         self.port = port
-    
 
-    def run(self):
-        request = audio_pb2.AudioData(
+    def _audio_request_generator(self):
+        yield audio_pb2.AudioData(
             format="wav", sample_rate=16000, audio_bytes=self.audio_data
         )
 
+    def run(self):
         with grpc.insecure_channel(f"{self.hostname}:{self.port}") as channel:
             stub = audio_pb2_grpc.AudioServiceStub(channel)
-            response_stream = stub.UploadAudio(request)
+            response_stream = stub.StreamAudio(self._audio_request_generator())
 
             for response in response_stream:
                 print(f"Received {len(response.audio_bytes)} bytes from server")
