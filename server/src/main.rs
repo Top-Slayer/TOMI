@@ -1,4 +1,4 @@
-use tonic::transport::{Server}; // ServerTlsConfig, Identity
+use tonic::transport::{Server, ServerTlsConfig, Identity};
 use tonic::{Request, Response, Status};
 use futures_core::Stream;
 use tokio_stream::wrappers::ReceiverStream;
@@ -55,7 +55,7 @@ impl AudioService for MyAudioService {
 
                 if processed.is_empty() || tx.send(Ok(AudioResponse { audio_bytes: processed })).await.is_err() {
                     unsafe { shmem::clear_shm("/out_shm"); }
-                    println!("{}", log_concat("Clear share memory"));
+                    println!("{}", log_concat!("Clear share memory"));
                     break;
                 }
 
@@ -69,20 +69,16 @@ impl AudioService for MyAudioService {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // let cert = fs::read("server.pem")?;
-    // let key = fs::read("server.key")?;
-    // let identity = Identity::from_pem(cert, key);
-
     let addr = "[::]:50051".parse()?;
     let service = MyAudioService::default();
 
     println!("{}", log_concat!("AudioService server listening on {}", addr));
 
     Server::builder()
-        // .tls_config(tonic::transport::ServerTlsConfig::new()
-        //     .identity(tonic::transport::Identity::from_pem(
-        //         std::fs::read("server.pem")?,
-        //         std::fs::read("server.key")?,
+        // .tls_config(ServerTlsConfig::new()
+        //     .identity(Identity::from_pem(
+        //         tokio::fs::read("../server.crt").await?,
+        //         tokio::fs::read("../server.key").await?,
         //     ))
         // )?
         .add_service(AudioServiceServer::new(service))

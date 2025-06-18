@@ -3,7 +3,7 @@ syntax = "proto3";
 package audio;
 
 service AudioService {
-  rpc UploadAudio(AudioData) returns (AudioResponse);
+  rpc StreamAudio (stream AudioData) returns (stream AudioResponse);
 }
 
 message AudioData {
@@ -13,5 +13,5 @@ message AudioData {
 }
 
 message AudioResponse {
-  string message = 1;
+  bytes audio_bytes = 1;
 }
