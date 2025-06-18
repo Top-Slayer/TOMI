@@ -1,0 +1,11 @@
+core-process/out_folder/
+core-process/CalculateSend2Website/
+core-process/model/
+core-process/templates/
+core-process/website/
+core-process/functions/wav2vec2.onnx
+core-process/atoon_audio.wav
+core-process/test_16k.wav
+core-process/test.wav
+core-process/WebserverFlask.py
+core-process/__pycache__
