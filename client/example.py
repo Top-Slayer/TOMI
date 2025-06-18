@@ -1,13 +1,13 @@
-import build  # not important for use case
+#import build  # not important for use case
 
 import audio
 import time
 
-hostname = "2.tcp.us-cal-1.ngrok.io"
-port = 19490
+hostname = "0.tcp.ngrok.io"
+port = 18773
 
-streamer = audio.AudioStreamer(hostname=hostname, port=port)
-streamer.mic().start()
+audio.MicRecorder().start()
+audio.AudioStreamer(hostname=hostname, port=port).start()
 
 while True:
     print("Hello world!")
