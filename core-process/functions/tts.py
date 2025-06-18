@@ -15,6 +15,10 @@ def synthesize(text: str):
     inputs = tokenizer(text, return_tensors="pt")
     inputs["input_ids"] = inputs["input_ids"].long()
 
+    if inputs['input_ids'].shape[1] == 0:
+        print(lg.log_concat("[TTS] ❌ Tokenizer returned empty input."))
+        return
+
     with torch.no_grad():
         int16_datas = model(**inputs).waveform
 

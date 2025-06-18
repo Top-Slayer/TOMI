@@ -1,9 +1,9 @@
 import time
-from functions import tts, stt
+from functions import tts, stt, chat2llm
 from utils import shmem
 from utils import logging as lg
 
-model_name = "gemma3:12b"
+model_name = "gemma3:12b-it-q4_K_M"
 system_prompt = """
       You are a helpful assistant specialized in Lao academic and historical knowledge.
 
@@ -24,12 +24,8 @@ if __name__ == "__main__":
             in_bytes = shmem.read_bytes_from_shm()
             text = stt.transcript(in_bytes)
             print(lg.log_concat("STT output:", text))
-            tts.synthesize("ສະບາຍດີຂ້ອຍຊື້່ໂທມິ")
-            tts.synthesize("ເປັນຜູ້ຊ່ວຍສ່ວນຕົວຂອງເຈົ້າ")
-            # shmem.write_bytes_to_shm(b'ggez')
-            # shmem.write_bytes_to_shm(b'juy')
+            chat2llm.chat(text)
             shmem.add_end_to_shm()
-            # chat2llm.chat(text)
 
             time.sleep(10)
 
