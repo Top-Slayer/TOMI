@@ -1,15 +1,15 @@
 FROM debian:bullseye-slim
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt update && apt-get install -y \
     libssl1.1 \
-    ca-certificates \
+    ca-certificates
 
 WORKDIR /app
 
 COPY server/target/debug/server /app
-COPY server/server.key /app
-COPY server/server.pem /app
+COPY server.crt /
+COPY server.key /
 
-EXPOSE 1212
+EXPOSE 50051
 
 CMD ["./server"]
