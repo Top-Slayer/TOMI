@@ -9,19 +9,19 @@ import json
 import os
 
 
-repo_name = "wav2vec2-large-xls-r-300m-lao"
+# repo_name = "wav2vec2-large-xls-r-300m-lao"
 
 
-from dotenv import load_dotenv
-load_dotenv()
-import huggingface_hub
-huggingface_hub.login(token=os.getenv("HUGGING_FACE_API"))
+# from dotenv import load_dotenv
+# load_dotenv()
+# import huggingface_hub
+# huggingface_hub.login(token=os.getenv("HUGGING_FACE_API"))
 
 
-df = pd.read_csv("sperated_dataset/train.tsv", sep="\t")
+df = pd.read_csv("preprocessing/dataset/train.tsv", sep="\t")
 train_ds = Dataset.from_pandas(df)
 
-df = pd.read_csv("sperated_dataset/test.tsv", sep="\t")
+df = pd.read_csv("preprocessing/dataset/test.tsv", sep="\t")
 test_ds = Dataset.from_pandas(df)
 
 
@@ -50,8 +50,8 @@ def get_speech_file_to_array(base_path):
     return speech_file_to_array
 
 
-train_ds = train_ds.map(get_speech_file_to_array("sperated_dataset/train_clips"))
-test_ds = test_ds.map(get_speech_file_to_array("sperated_dataset/test_clips"))
+train_ds = train_ds.map(get_speech_file_to_array("preprocessing/dataset/train_clips"))
+test_ds = test_ds.map(get_speech_file_to_array("preprocessing/dataset/test_clips"))
 
 
 # Remove some special character
@@ -107,7 +107,7 @@ tokenizer = Wav2Vec2CTCTokenizer.from_pretrained(
 )
 
 print(tokenizer.tokenize(text="ສະບາຍດີ ເຈົ້າຂອງ"))
-tokenizer.push_to_hub(repo_name)
+# tokenizer.push_to_hub(repo_name)
 
 
 # Sampling rate of audio
@@ -120,12 +120,14 @@ feature_extractor = Wav2Vec2FeatureExtractor(
     do_normalize=True,
     return_attention_mask=True,
 )
+# feature_extractor.push_to_hub(repo_name)
 
 
 # Define processor
 from transformers import Wav2Vec2Processor
 
 processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tokenizer)
+# processor.push_to_hub(repo_name)
 
 
 # Test random output
@@ -159,7 +161,9 @@ def prepare_dataset(batch):
     audio = batch["audio"]["array"]
     sampling_rate = batch["audio"]["sampling_rate"]
 
-    batch["input_values"] = processor(audio, sampling_rate=sampling_rate).input_values[0]
+    batch["input_values"] = processor(audio, sampling_rate=sampling_rate).input_values[
+        0
+    ]
     batch["labels"] = processor(text=batch["sentence"]).input_ids
     return batch
 
@@ -260,10 +264,10 @@ training_args = TrainingArguments(
     save_steps=400,
     eval_steps=400,
     logging_steps=400,
-    learning_rate=3e-4,
+    learning_rate=1e-5,
     warmup_steps=500,
     save_total_limit=2,
-    push_to_hub=True,
+    push_to_hub=False,
 )
 
 from transformers import Trainer
@@ -279,4 +283,4 @@ trainer = Trainer(
 )
 
 trainer.train()
-trainer.push_to_hub()
+# trainer.push_to_hub()
