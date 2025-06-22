@@ -10,7 +10,7 @@ import shutil
 
 
 # Load model and processor
-model_path = "model/checkpoint-3600"
+model_path = "model/checkpoint-6200"
 shutil.copy("vocab.json", model_path)
 
 processor = Wav2Vec2Processor.from_pretrained(model_path)
@@ -20,22 +20,22 @@ model.eval()
 test_data = []
 
 #### Evaluation doesn't seen dataset ####
-# with open("eval_sound/eval.tsv", "r", encoding="utf-8") as f:
-#     reader = csv.reader(f, delimiter="\t")
-#     for row in reader:
-#         test_data.append(
-#             (os.path.join("eval_sound", row[0]), row[1])
-#         )
+with open("eval_sound/eval.tsv", "r", encoding="utf-8") as f:
+    reader = csv.reader(f, delimiter="\t")
+    for row in reader:
+        test_data.append(
+            (os.path.join("eval_sound", row[0]), row[1])
+        )
 
 
 #### Evaluation test dataset ####
-with open("preprocessing/dataset/test.tsv", "r", encoding="utf-8") as f:
-    reader = csv.reader(f, delimiter="\t")
-    for row in reader:
-        if len(row) >= 2:
-            test_data.append(
-                (os.path.join("preprocessing", "dataset", "test_clips", row[0]), row[1])
-            )
+# with open("laos-transcript/test.tsv", "r", encoding="utf-8") as f:
+#     reader = csv.reader(f, delimiter="\t")
+#     for row in reader:
+#         if len(row) >= 2:
+#             test_data.append(
+#                 (os.path.join("preprocessing", "dataset", "test_clips", row[0]), row[1])
+#             )
 
 
 test_data = test_data[1:]
@@ -64,7 +64,9 @@ for audio_file, reference in tqdm(test_data):
         logits = model(input_values).logits
 
     predicted_ids = torch.argmax(logits, dim=-1)
-    transcription = processor.decode(predicted_ids[0]).replace("[PAD]", "")
+    transcription = processor.tokenizer.decode(
+        predicted_ids[0], skip_special_tokens=True
+    )
 
     error_cer = cer(reference, transcription)
     avg_error_cer += round(error_cer, 3)

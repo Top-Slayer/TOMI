@@ -18,10 +18,10 @@ import os
 # huggingface_hub.login(token=os.getenv("HUGGING_FACE_API"))
 
 
-df = pd.read_csv("preprocessing/dataset/train.tsv", sep="\t")
+df = pd.read_csv("laos-transcript/train.tsv", sep="\t")
 train_ds = Dataset.from_pandas(df)
 
-df = pd.read_csv("preprocessing/dataset/test.tsv", sep="\t")
+df = pd.read_csv("laos-transcript/test.tsv", sep="\t")
 test_ds = Dataset.from_pandas(df)
 
 
@@ -50,8 +50,8 @@ def get_speech_file_to_array(base_path):
     return speech_file_to_array
 
 
-train_ds = train_ds.map(get_speech_file_to_array("preprocessing/dataset/train_clips"))
-test_ds = test_ds.map(get_speech_file_to_array("preprocessing/dataset/test_clips"))
+train_ds = train_ds.map(get_speech_file_to_array("laos-transcript/train_clips"))
+test_ds = test_ds.map(get_speech_file_to_array("laos-transcript/test_clips"))
 
 
 # Remove some special character
@@ -106,7 +106,7 @@ tokenizer = Wav2Vec2CTCTokenizer.from_pretrained(
     "./", unk_token="[UNK]", pad_token="[PAD]", word_delimiter_token="|"
 )
 
-print(tokenizer.tokenize(text="ສະບາຍດີ ເຈົ້າຂອງ"))
+print(tokenizer.tokenize(text=train_ds["sentence"][0]))
 # tokenizer.push_to_hub(repo_name)
 
 
@@ -118,7 +118,7 @@ feature_extractor = Wav2Vec2FeatureExtractor(
     sampling_rate=16000,
     padding_value=0.0,
     do_normalize=True,
-    return_attention_mask=True,
+    return_attention_mask=False,
 )
 # feature_extractor.push_to_hub(repo_name)
 
@@ -215,21 +215,26 @@ class DataCollatorCTCWithPadding:
 
 data_collator = DataCollatorCTCWithPadding(processor=processor, padding=True)
 wer_metric = load_metric("wer")
+cer_metric = load_metric("cer")
 
 
 def compute_metrics(pred):
     pred_logits = pred.predictions
     pred_ids = np.argmax(pred_logits, axis=-1)
-
     pred.label_ids[pred.label_ids == -100] = processor.tokenizer.pad_token_id
 
-    pred_str = processor.batch_decode(pred_ids)
-    # we do not want to group tokens when computing the metrics
-    label_str = processor.batch_decode(pred.label_ids, group_tokens=False)
+    pred_str = processor.batch_decode(pred_ids, skip_special_tokens=True)
+    label_ids = np.where(
+        pred.label_ids != -100, pred.label_ids, processor.tokenizer.pad_token_id
+    )
+    label_str = processor.batch_decode(
+        label_ids, group_tokens=False, skip_special_tokens=True
+    )
 
     wer = wer_metric.compute(predictions=pred_str, references=label_str)
+    cer = cer_metric.compute(predictions=pred_str, references=label_str)
 
-    return {"wer": wer}
+    return {"wer": wer, "cer": cer}
 
 
 from transformers import Wav2Vec2ForCTC
@@ -255,19 +260,22 @@ from transformers import TrainingArguments
 training_args = TrainingArguments(
     output_dir="model",
     group_by_length=True,
-    per_device_train_batch_size=16,
-    gradient_accumulation_steps=2,
+    per_device_train_batch_size=8,
+    gradient_accumulation_steps=4,
     eval_strategy="steps",
-    num_train_epochs=30,
+    num_train_epochs=60,
     gradient_checkpointing=True,
     fp16=True,
-    save_steps=400,
-    eval_steps=400,
-    logging_steps=400,
-    learning_rate=1e-5,
-    warmup_steps=500,
-    save_total_limit=2,
+    save_steps=200,
+    eval_steps=200,
+    logging_steps=50,
+    learning_rate=5e-5,
+    warmup_steps=1000,
+    save_total_limit=3,
+    lr_scheduler_type ="linear",
     push_to_hub=False,
+    dataloader_num_workers=2,
+    warmup_ratio=0.1,
 )
 
 from transformers import Trainer
