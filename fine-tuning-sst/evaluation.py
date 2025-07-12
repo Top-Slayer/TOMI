@@ -10,7 +10,7 @@ import shutil
 
 
 # Load model and processor
-model_path = "model/checkpoint-6200"
+model_path = "model/checkpoint-3600"
 shutil.copy("vocab.json", model_path)
 
 processor = Wav2Vec2Processor.from_pretrained(model_path)
@@ -20,11 +20,11 @@ model.eval()
 test_data = []
 
 #### Evaluation doesn't seen dataset ####
-with open("eval_sound/eval.tsv", "r", encoding="utf-8") as f:
+with open("eval-dataset/eval.tsv", "r", encoding="utf-8") as f:
     reader = csv.reader(f, delimiter="\t")
     for row in reader:
         test_data.append(
-            (os.path.join("eval_sound", row[0]), row[1])
+            (os.path.join("eval-dataset", row[0]), row[1])
         )
 
 
