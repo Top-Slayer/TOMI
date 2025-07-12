@@ -10,16 +10,24 @@ import argparse
 import shutil
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--model', type=str)
 parser.add_argument('--eval', type=str)
 
-# Load model and processor
-model_path = "model.bak/checkpoint-7200"
-shutil.copy("vocab.json", model_path)
+model_path = ""
 
+args = parser.parse_args()
+
+if args.model is not None:
+    model_path = args.model
+else:
+    print("Not using model.")
+    exit(1)
+
+
+shutil.copy("vocab.json", model_path)
 print(f"Using model: {model_path}")
 
 test_data = []
-args = parser.parse_args()
 
 if args.eval == "unseen":
     #### Evaluation doesn't seen dataset ####
