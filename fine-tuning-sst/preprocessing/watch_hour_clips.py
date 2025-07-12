@@ -1,7 +1,7 @@
 import os
 import torchaudio
 
-folder_path = "dataset/train_clips"
+folder_path = "../laos-transcript/train_clips"
 total_seconds = 0
 total_files = 0
 success_count = 0
