@@ -6,36 +6,47 @@ import soundfile as sf
 from transformers import Wav2Vec2Processor, Wav2Vec2ForCTC
 from jiwer import cer
 from tqdm import tqdm
+import argparse
 import shutil
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--eval', type=str)
 
 # Load model and processor
-model_path = "model/checkpoint-3600"
+model_path = "model.bak/checkpoint-7200"
 shutil.copy("vocab.json", model_path)
+
+print(f"Using model: {model_path}")
+
+test_data = []
+args = parser.parse_args()
+
+if args.eval == "unseen":
+    #### Evaluation doesn't seen dataset ####
+    with open("eval-dataset/eval.tsv", "r", encoding="utf-8") as f:
+        reader = csv.reader(f, delimiter="\t")
+        for row in reader:
+            test_data.append(
+                (os.path.join("eval-dataset", row[0]), row[1])
+            )
+
+elif args.eval == "seen":
+    #### Evaluation test dataset ####
+    with open("laos-transcript/test.tsv", "r", encoding="utf-8") as f:
+        reader = csv.reader(f, delimiter="\t")
+        for row in reader:
+            if len(row) >= 2:
+                test_data.append(
+                    (os.path.join("laos-transcript", "test_clips", row[0]), row[1])
+                )
+
+else:
+    print("Don't have that choice.")
+    exit(1)
 
 processor = Wav2Vec2Processor.from_pretrained(model_path)
 model = Wav2Vec2ForCTC.from_pretrained(model_path)
 model.eval()
-
-test_data = []
-
-#### Evaluation doesn't seen dataset ####
-# with open("eval-dataset/eval.tsv", "r", encoding="utf-8") as f:
-#     reader = csv.reader(f, delimiter="\t")
-#     for row in reader:
-#         test_data.append(
-#             (os.path.join("eval-dataset", row[0]), row[1])
-#         )
-
-
-#### Evaluation test dataset ####
-with open("laos-transcript/test.tsv", "r", encoding="utf-8") as f:
-    reader = csv.reader(f, delimiter="\t")
-    for row in reader:
-        if len(row) >= 2:
-            test_data.append(
-                (os.path.join("laos-transcript", "test_clips", row[0]), row[1])
-            )
 
 
 test_data = test_data[1:]
