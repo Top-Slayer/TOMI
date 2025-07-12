@@ -20,22 +20,22 @@ model.eval()
 test_data = []
 
 #### Evaluation doesn't seen dataset ####
-with open("eval-dataset/eval.tsv", "r", encoding="utf-8") as f:
-    reader = csv.reader(f, delimiter="\t")
-    for row in reader:
-        test_data.append(
-            (os.path.join("eval-dataset", row[0]), row[1])
-        )
+# with open("eval-dataset/eval.tsv", "r", encoding="utf-8") as f:
+#     reader = csv.reader(f, delimiter="\t")
+#     for row in reader:
+#         test_data.append(
+#             (os.path.join("eval-dataset", row[0]), row[1])
+#         )
 
 
 #### Evaluation test dataset ####
-# with open("laos-transcript/test.tsv", "r", encoding="utf-8") as f:
-#     reader = csv.reader(f, delimiter="\t")
-#     for row in reader:
-#         if len(row) >= 2:
-#             test_data.append(
-#                 (os.path.join("preprocessing", "dataset", "test_clips", row[0]), row[1])
-#             )
+with open("laos-transcript/test.tsv", "r", encoding="utf-8") as f:
+    reader = csv.reader(f, delimiter="\t")
+    for row in reader:
+        if len(row) >= 2:
+            test_data.append(
+                (os.path.join("laos-transcript", "test_clips", row[0]), row[1])
+            )
 
 
 test_data = test_data[1:]
