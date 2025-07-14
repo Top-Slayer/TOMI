@@ -11,8 +11,5 @@ core-process/functions/wav2vec2.onnx
 .env
 server/server.key
 server/server.pem
-<<<<<<< HEAD
 client/config_tunnel.json
-=======
 config_tunnel.json
->>>>>>> 104dc0db05bbf0aa76c68bb068c90fa8fc55b74b
