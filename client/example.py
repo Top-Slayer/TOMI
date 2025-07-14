@@ -2,9 +2,13 @@
 
 import audio
 import time
+import json
 
-hostname = "0.tcp.ngrok.io"
-port = 18773
+with open("config_tunnel.json", "r") as f:
+    data = json.load(f)
+
+hostname = data["hostname"]
+port = data["port"]
 
 audio.MicRecorder().start()
 audio.AudioStreamer(hostname=hostname, port=port).start()
@@ -12,8 +16,3 @@ audio.AudioStreamer(hostname=hostname, port=port).start()
 while True:
     print("Hello world!")
     time.sleep(5)
-
-
-# audio.sent2server(
-#     audio_data=wav_bytes,
-# )
