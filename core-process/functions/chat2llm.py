@@ -59,6 +59,7 @@ def chat(user_prompt: str, debug=False):
                 print(json_data["response"], end="", flush=True)
 
                 if json_data["response"] in " ":
+                    print()
                     tts.synthesize(sentense)
                     sentense = ""
 
