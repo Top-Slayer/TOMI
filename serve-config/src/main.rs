@@ -14,30 +14,43 @@ use argon2::{
 };
 use rand::rngs::OsRng;
 
+use dotenv::dotenv;
+
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Config {
     hostname: String,
     port: i32,
-    password: Option<String>,
+    password: Option<String>
 }
 
 static CONFIG: Lazy<RwLock<Config>> = Lazy::new(|| {
     RwLock::new(Config {
         hostname: "xxxxxxxxxxxxx".to_string(),
         port: 0,
-        password: Some({
-            let salt = SaltString::generate(&mut OsRng);
-            let argon2 = Argon2::default();
-            argon2
-                .hash_password(b"super_secret", &salt)
-                .unwrap()
-                .to_string()
-        }),
+        password: None
     })
 });
 
 #[tokio::main]
 async fn main() {
+    dotenv().ok();
+
+    let bypass_key = std::env::var("BY_PASS_KEY")
+        .expect("Set BY_PASS_KEY environment variable");
+
+    let salt = SaltString::generate(&mut OsRng);
+    let argon2 = Argon2::default();
+    let hash = argon2
+        .hash_password(bypass_key.as_bytes(), &salt)
+        .unwrap()
+        .to_string();
+
+    {
+        let mut cfg = CONFIG.write().unwrap();
+        cfg.password = Some(hash);
+    }
+
     let app = Router::new()
         .route("/", get(root))
         .route("/get-config", get(get_config))
