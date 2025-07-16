@@ -10,6 +10,7 @@ import audio_pb2
 import audio_pb2_grpc
 import wave
 import threading
+import requests
 
 
 SAMPLE_RATE = 16000  # Hz
@@ -21,6 +22,11 @@ MAX_SILENCE_DURATION = 3.0  # seconds
 mic_ready = threading.Event()
 audio_ready = threading.Event()
 audio_data: bytes = None
+
+
+def get_config(url: str):
+    json = requests.get(url)
+    print(json)
 
 
 class AudioStreamer(threading.Thread):

@@ -10,6 +10,7 @@ with open("config_tunnel.json", "r") as f:
 hostname = data["hostname"]
 port = data["port"]
 
+audio.get_config()
 audio.MicRecorder().start()
 audio.AudioStreamer(hostname=hostname, port=port).start()
 
