@@ -6,15 +6,43 @@ NUM=0
 LOCAL_PORT=50051
 OUTPUT_FILE="config_tunnel.json"
 LLM_MODEL="gemma3:12b-it-q4_K_M"
+URL=""
+PASS=""
+
+for arg in "$@"
+do
+    case $arg in
+        URL=*)
+            URL="${arg#*=}"
+            shift
+        ;;
+        PASS=*)
+            PASS="${arg#*=}"
+            shift
+        ;;
+    esac
+done
+
+if [[ -z "$URL" || -z "$PASS" ]]; then
+    echo "Error: Required URL and PASS args."
+    echo "Usage: $0 URL=url_path PASS=password"
+    exit 1
+fi
+
 
 if ! which ngrok >/dev/null 2>&1; then
     echo "⬇️ Installing Ngrok..."
     curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
-        | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null \
-        && echo "deb https://ngrok-agent.s3.amazonaws.com buster main" \
-        | sudo tee /etc/apt/sources.list.d/ngrok.list \
-        && sudo apt update \
-        && sudo apt install ngrok
+    | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null \
+    && echo "deb https://ngrok-agent.s3.amazonaws.com buster main" \
+    | sudo tee /etc/apt/sources.list.d/ngrok.list \
+    && sudo apt update \
+    && sudo apt install ngrok
+fi
+
+if pgrep ngrok > /dev/null; then
+    echo "Restarting ngrok..."
+    pkill ngrok
 fi
 
 ngrok tcp "$LOCAL_PORT" --region=ap > /dev/null &
@@ -25,7 +53,7 @@ for i in {1..10}; do
     if [[ -n "$url" ]]; then
         break
     fi
-    sleep 1
+    sleep 3
 done
 
 if [[ -z "$url" ]]; then
@@ -33,13 +61,22 @@ if [[ -z "$url" ]]; then
     exit 1
 fi
 
+if ! which jq >/dev/null 2>&1; then
+    echo "⬇️ Installing jq command..."
+    sudo apt install jq
+fi
+
 url=$(curl -s http://127.0.0.1:4040/api/tunnels | jq -r '.tunnels[].public_url')
 hostport=${url#tcp://}
 hostname=${hostport%%:*}
 port=${hostport##*:}
 
+curl -X POST "$URL" \
+-H "Content-Type: application/json" \
+-d "{\"hostname\": \"$hostname\", \"port\": $port, \"password\": \"$PASS\"}"
+
 json=$(jq -n --arg hostname "$hostname" --argjson port "$port" \
-    '{hostname: $hostname, port: $port}')
+'{hostname: $hostname, port: $port}')
 
 echo -e "Export config tunnel:\n$json"
 echo "$json" > "$OUTPUT_FILE"
@@ -62,7 +99,8 @@ NUM=$((NUM + 1))
 tmux split-window -v
 
 tmux select-pane -t $NUM
-tmux send-keys "cd core-process/ && python core.py" C-m
+tmux send-keys "cd core-process" C-m
+tmux send-keys "python core.py" C-m
 
 NUM=$((NUM + 1))
 tmux split-window -v
@@ -71,7 +109,8 @@ sleep 3
 
 tmux select-pane -t $NUM
 tmux send-keys "ollama pull $LLM_MODEL" C-m
-tmux send-keys "cd server/ && cargo run" C-m
+tmux send-keys "cd server/" C-m
+tmux send-keys "cargo run" C-m
 
 
 tmux attach -t "tomi"
