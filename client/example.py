@@ -2,18 +2,11 @@
 
 import audio
 import time
-import json
 
-with open("config_tunnel.json", "r") as f:
-    data = json.load(f)
-
-hostname = data["hostname"]
-port = data["port"]
-
-audio.get_config()
+hostname, port = audio.get_config("http://XXXXXXXXXXXXXXX")
 audio.MicRecorder().start()
 audio.AudioStreamer(hostname=hostname, port=port).start()
 
 while True:
-    print("Hello world!")
+    print("Main process")
     time.sleep(5)
