@@ -11,6 +11,7 @@ import audio_pb2_grpc
 import wave
 import threading
 import requests
+from typing import Tuple
 
 
 SAMPLE_RATE = 16000  # Hz
@@ -24,9 +25,11 @@ audio_ready = threading.Event()
 audio_data: bytes = None
 
 
-def get_config(url: str):
-    json = requests.get(url)
-    print(json)
+def get_config(url: str) -> Tuple[str, int]:
+    res = requests.get(url)
+    data = res.json()
+
+    return data['hostname'], data['port']
 
 
 class AudioStreamer(threading.Thread):
