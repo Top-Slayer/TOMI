@@ -4,15 +4,13 @@ from scipy.io.wavfile import write as wav_write
 from scipy.io import wavfile
 import io
 import time
-import io
 import grpc
-import audio_pb2
-import audio_pb2_grpc
-import wave
 import threading
 import requests
 from typing import Tuple
 
+import audio_pb2
+import audio_pb2_grpc
 
 SAMPLE_RATE = 16000  # Hz
 CHANNELS = 1  # Mono
@@ -27,8 +25,11 @@ audio_data: bytes = None
 
 def get_config(url: str) -> Tuple[str, int]:
     res = requests.get(url)
-    data = res.json()
+    if res.status_code != 200:
+        print(f"[!] Can't get config from server: {__file__}")
+        return None, None
 
+    data = res.json()
     return data['hostname'], data['port']
 
 
@@ -46,46 +47,67 @@ class AudioStreamer(threading.Thread):
 
     def run(self):
         while True:
+            num_reconnect = 0
             audio_ready.wait()
             audio_ready.clear()
 
-            # channel =  grpc.secure_channel(f"{self.hostname}:{self.port}",  grpc.ssl_channel_credentials())
-            channel = grpc.insecure_channel(f"{self.hostname}:{self.port}")
+            while True:
+                try:
+                    # channel =  grpc.secure_channel(f"{self.hostname}:{self.port}",  grpc.ssl_channel_credentials())
+                    channel = grpc.insecure_channel(f"{self.hostname}:{self.port}")
 
-            stub = audio_pb2_grpc.AudioServiceStub(channel)
+                    stub = audio_pb2_grpc.AudioServiceStub(channel)
 
-            response_stream = stub.StreamAudio(self._audio_request_generator())
-            for response in response_stream:
-                buf = io.BytesIO(response.audio_bytes)
-                samplerate, data = wavfile.read(buf)
-                sd.play(data, samplerate)
-                sd.wait()
+                    response_stream = stub.StreamAudio(self._audio_request_generator())
 
-                print(f"Received {len(response.audio_bytes)} bytes from server")
+                    for response in response_stream:
+                        buf = io.BytesIO(response.audio_bytes)
+                        print(f"[TOMI Speaker] Received {len(response.audio_bytes)} bytes from server")
+                        print(f"[TOMI Speaker] Speaking...")
+
+                        samplerate, data = wavfile.read(buf)
+                        sd.play(data, samplerate)
+                        sd.wait()
+
+                    print(f"[TOMI Speaker] Ouput sound done.")
+                    break
+
+                except:
+                    if num_reconnect >= 10:
+                        print(f"[!] Out of maximum trying connect")
+                        break
+
+                    print(f"[X] gRPC Error connect to Server: Retrying in 0.1s...")
+                    time.sleep(0.1)
+                    num_reconnect += 1
 
             mic_ready.set()
-
 
 class MicRecorder(threading.Thread):
     def __init__(self, callback=None):
         super().__init__(daemon=True)
 
     def _is_silent(self, audio_chunk, threshold):
-        volume = np.sqrt(np.mean(audio_chunk**2))
-        print(volume)
-        return volume < threshold
+        volumn = np.sqrt(np.mean(audio_chunk**2))
+        # print(volumn) # For debug watch volumn
+        return volumn < threshold
 
     def run(self):
         global audio_data
 
         while True:
-            print("🎙️ Recording... Speak now.")
-            frames = []
-            silence_start = None
-
+            print("[TOMI Microphone] Listening...")
             with sd.InputStream(
                 samplerate=SAMPLE_RATE, channels=CHANNELS, dtype="float32"
             ) as stream:
+                while True:
+                    audio_chunk, _ = stream.read(int(SAMPLE_RATE * CHUNK_DURATION))
+                    if not self._is_silent(audio_chunk, SILENCE_THRESHOLD):
+                        print("[TOMI Microphone] Voice detected. Recording started.")
+                        frames = [audio_chunk]
+                        break
+
+                silence_start = None
                 while True:
                     audio_chunk, _ = stream.read(int(SAMPLE_RATE * CHUNK_DURATION))
                     frames.append(audio_chunk)
@@ -94,7 +116,7 @@ class MicRecorder(threading.Thread):
                         if silence_start is None:
                             silence_start = time.time()
                         elif time.time() - silence_start > MAX_SILENCE_DURATION:
-                            print("⏹️ Silence detected. Stopping recording.")
+                            print("[TOMI Microphone] Silence detected. Stopping recording.")
                             break
                     else:
                         silence_start = None
@@ -105,13 +127,6 @@ class MicRecorder(threading.Thread):
             buffer = io.BytesIO()
             wav_write(buffer, SAMPLE_RATE, int16_audio)
             buffer.seek(0)
-
-            with wave.open(buffer, "rb") as wf:
-                print("Channels:", wf.getnchannels())
-                print("Sample Width:", wf.getsampwidth())
-                print("Frame Rate:", wf.getframerate())
-                print("Frames:", wf.getnframes())
-                print(f"Duration (sec): {wf.getnframes() / wf.getframerate()}s")
 
             audio_data = buffer.getvalue()
 

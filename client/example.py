@@ -1,12 +1,11 @@
-#import build  # not important for use case
+import TOMI.client.audio as tomi_audio
 
-import audio
-import time
+hostname, port = tomi_audio.get_config("http://<GET_CONFIG_ENDPOINT>")
 
-hostname, port = audio.get_config("http://XXXXXXXXXXXXXXX")
-audio.MicRecorder().start()
-audio.AudioStreamer(hostname=hostname, port=port).start()
+if hostname != None and port != None:
+    tomi_audio.MicRecorder().start()
+    tomi_audio.AudioStreamer(hostname=hostname, port=port).start()
+
 
 while True:
     print("Main process")
-    time.sleep(5)
