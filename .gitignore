@@ -13,3 +13,4 @@ server/server.key
 server/server.pem
 client/config_tunnel.json
 config_tunnel.json
+core-process/debug_denoise.wav

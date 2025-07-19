@@ -1,28 +1,25 @@
 import time
 from functions import tts, stt, chat2llm
-from utils import shmem
+from utils import shmem, denoise
 from utils import logging as lg
 
-model_name = "gemma3:12b-it-q4_K_M"
-system_prompt = """
-      You are a helpful assistant specialized in Lao academic and historical knowledge.
+# model_name = "gemma3:12b-it-q4_K_M"
+# system_prompt = """
+#       You are a helpful assistant and friendly emotion.
 
-      [System Instruction]
-      - Only answer questions in the Lao language.
-      - If asked about unrelated topics, politely refuse.
-      - Respond in full sentences using formal language.
-      - Your name is "ທູມິ"
-"""
+#       [System Instruction]
+#       - Only answer questions in the Lao language.
+#       - If asked about unrelated topics, politely refuse.
+#       - Respond in full sentences using formal language.
+#       - Your name is "ທູມິ"
+# """
 
 
 if __name__ == "__main__":
     try:
         while 1:
-            # p = Process(target=view_mem)
-            # p.start()
-
             in_bytes = shmem.read_bytes_from_shm()
-            text = stt.transcript(in_bytes)
+            text = stt.transcript(denoise.denoise_input_sound(in_bytes, debug=True))
             print(lg.log_concat("STT output:", text))
             chat2llm.chat(text)
             shmem.add_end_to_shm()
