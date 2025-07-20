@@ -20,3 +20,4 @@ fine-tuning-sst/model/
 fine-tuning-sst/model.bak/
 fine-tuning-sst/vocab.json/
 fine-tuning-sst/stt_evaluation_results.csv
+fine-tuning-sst/vocab.json
