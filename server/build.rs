@@ -1,5 +1,4 @@
 use std::fs;
-use std::path::PathBuf;
 
 fn main() -> Result<(), Box<dyn std::error::Error>>{
     let proto_dir = "../protos";

@@ -9,20 +9,21 @@ import json
 import os
 
 
-# repo_name = "wav2vec2-large-xls-r-300m-lao"
+repo_name = "wav2vec2-large-xls-r-300m-lao"
 
 
-# from dotenv import load_dotenv
-# load_dotenv()
-# import huggingface_hub
-# huggingface_hub.login(token=os.getenv("HUGGING_FACE_API"))
+from dotenv import load_dotenv
+load_dotenv()
+import huggingface_hub
+huggingface_hub.login(token=os.getenv("HUGGING_FACE_API"))
 
 
 df = pd.read_csv("laos-transcript/train.tsv", sep="\t")
-train_ds = Dataset.from_pandas(df)
+full_ds = Dataset.from_pandas(df)
 
-df = pd.read_csv("laos-transcript/test.tsv", sep="\t")
-test_ds = Dataset.from_pandas(df)
+splits = full_ds.train_test_split(test_size=0.2, seed=42)
+train_ds = splits['train']
+test_ds = splits['test']
 
 
 # Convert Audio to array datas
@@ -50,8 +51,8 @@ def get_speech_file_to_array(base_path):
     return speech_file_to_array
 
 
-train_ds = train_ds.map(get_speech_file_to_array("laos-transcript/train_clips"))
-test_ds = test_ds.map(get_speech_file_to_array("laos-transcript/test_clips"))
+train_ds = train_ds.map(get_speech_file_to_array("laos-transcript/denoise_train_clips"))
+test_ds = test_ds.map(get_speech_file_to_array("laos-transcript/denoise_train_clips"))
 
 
 # Remove some special character
@@ -107,7 +108,7 @@ tokenizer = Wav2Vec2CTCTokenizer.from_pretrained(
 )
 
 print(tokenizer.tokenize(text=train_ds["sentence"][0]))
-# tokenizer.push_to_hub(repo_name)
+tokenizer.push_to_hub(repo_name)
 
 
 # Sampling rate of audio
@@ -120,14 +121,14 @@ feature_extractor = Wav2Vec2FeatureExtractor(
     do_normalize=True,
     return_attention_mask=False,
 )
-# feature_extractor.push_to_hub(repo_name)
+feature_extractor.push_to_hub(repo_name)
 
 
 # Define processor
 from transformers import Wav2Vec2Processor
 
 processor = Wav2Vec2Processor(feature_extractor=feature_extractor, tokenizer=tokenizer)
-# processor.push_to_hub(repo_name)
+processor.push_to_hub(repo_name)
 
 
 # Test random output
@@ -241,15 +242,16 @@ from transformers import Wav2Vec2ForCTC
 
 model = Wav2Vec2ForCTC.from_pretrained(
     "facebook/wav2vec2-xls-r-300m",
-    attention_dropout=0.0,
-    hidden_dropout=0.0,
+    attention_dropout=0.1,
+    hidden_dropout=0.1,
     feat_proj_dropout=0.0,
     mask_time_prob=0.05,
-    layerdrop=0.0,
+    layerdrop=0.1,
+    gradient_checkpointing=True,
     ctc_loss_reduction="mean",
     pad_token_id=processor.tokenizer.pad_token_id,
     vocab_size=len(processor.tokenizer),
-    ignore_mismatched_sizes=True,
+    # ignore_mismatched_sizes=True,
 )
 
 # model.freeze_feature_extractor()
@@ -260,22 +262,24 @@ from transformers import TrainingArguments
 training_args = TrainingArguments(
     output_dir="model",
     group_by_length=True,
-    per_device_train_batch_size=8,
-    gradient_accumulation_steps=4,
+    per_device_train_batch_size=32,
+    gradient_accumulation_steps=1,
+    per_device_eval_batch_size=16,
+    metric_for_best_model='wer',
     eval_strategy="steps",
-    num_train_epochs=60,
-    gradient_checkpointing=True,
+    eval_steps=1000,
+    logging_strategy="steps",
+    logging_steps=1000,
+    save_strategy="steps",
+    save_steps=1000,
+    num_train_epochs=100,
     fp16=True,
-    save_steps=200,
-    eval_steps=200,
-    logging_steps=50,
-    learning_rate=5e-5,
+    learning_rate=1e-4,
     warmup_steps=1000,
     save_total_limit=3,
-    lr_scheduler_type ="linear",
-    push_to_hub=False,
-    dataloader_num_workers=2,
-    warmup_ratio=0.1,
+    # gradient_checkpointing=True,
+    report_to="tensorboard",
+    push_to_hub=True,
 )
 
 from transformers import Trainer
@@ -291,4 +295,4 @@ trainer = Trainer(
 )
 
 trainer.train()
-# trainer.push_to_hub()
+trainer.push_to_hub()
