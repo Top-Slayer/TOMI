@@ -33,3 +33,11 @@ Stop virtual environment:
 - **deactivate**
 
   > _For close virtual environment_
+
+## Credits
+
+- Miku model: https://huggingface.co/yaniroo/YanAI/tree/main
+- Wav2vec2 STT: https://huggingface.co/facebook/wav2vec2-xls-r-300m
+- Gemma3 LLM: https://ollama.com/library/gemma3:12b-it-q4_K_M
+- VITS TTS: https://huggingface.co/facebook/mms-tts-lao
+- Retrieval-based Voice Conversion: https://github.com/daswer123/rvc-python

@@ -14,3 +14,9 @@ server/server.pem
 client/config_tunnel.json
 config_tunnel.json
 core-process/debug_denoise.wav
+fine-tuning-sst/laos-transcript/
+fine-tuning-sst/eval-dataset/
+fine-tuning-sst/model/
+fine-tuning-sst/model.bak/
+fine-tuning-sst/vocab.json/
+fine-tuning-sst/stt_evaluation_results.csv
