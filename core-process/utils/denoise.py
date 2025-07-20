@@ -37,6 +37,6 @@ def denoise_input_sound(audio_bytes: bytes, debug=False) -> bytes:
     audio_buffer.seek(0)
 
     if debug:
-        torchaudio.save("debug_denoise.wav", audio_tensor, sr, format="wav")
+        torchaudio.save("./tmp/debug_denoise.wav", audio_tensor, sr, format="wav")
 
     return audio_buffer.getvalue()
