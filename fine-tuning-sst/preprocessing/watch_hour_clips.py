@@ -27,16 +27,8 @@ for root, _, files in os.walk(folder_path):
                 print(f"Error reading {filename}: {e}")
 
 # Convert to time units
-total_minutes = total_seconds / 60
-total_hours = total_seconds / 3600
+hours = total_seconds // 3600
+minutes = (total_seconds % 3600) // 60
+remaining_seconds = total_seconds % 60
 
-# Final report
-print("\n========== Summary ==========")
-print(f"Total files found:        {total_files}")
-print(f"Successfully loaded:      {success_count}")
-print(f"Empty or unreadable:      {total_files - success_count}")
-print(f"Total duration (seconds): {total_seconds:.2f}")
-print(f"Total duration (minutes): {total_minutes:.2f}")
-print(f"Total duration (hours):   {total_hours:.2f}")
-if success_count > 0:
-    print(f"Average duration/file:    {total_seconds / success_count:.2f} sec")
+print(f"{hours} hours, {minutes} minutes, {remaining_seconds} seconds")

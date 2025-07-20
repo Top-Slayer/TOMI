@@ -10,8 +10,8 @@ import argparse
 import shutil
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--model', type=str)
-parser.add_argument('--eval', type=str)
+parser.add_argument("--model", type=str)
+parser.add_argument("--eval", type=str)
 
 model_path = ""
 
@@ -34,9 +34,7 @@ if args.eval == "unseen":
     with open("eval-dataset/eval.tsv", "r", encoding="utf-8") as f:
         reader = csv.reader(f, delimiter="\t")
         for row in reader:
-            test_data.append(
-                (os.path.join("eval-dataset", row[0]), row[1])
-            )
+            test_data.append((os.path.join("eval-dataset", row[0]), row[1]))
 
 elif args.eval == "seen":
     #### Evaluation test dataset ####
@@ -85,7 +83,7 @@ for audio_file, reference in tqdm(test_data):
     predicted_ids = torch.argmax(logits, dim=-1)
     transcription = processor.tokenizer.decode(
         predicted_ids[0], skip_special_tokens=True
-    )
+    ).replace("[PAD]", "")
 
     error_cer = cer(reference, transcription)
     avg_error_cer += round(error_cer, 3)
