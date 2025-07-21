@@ -41,3 +41,4 @@ Stop virtual environment:
 - Gemma3 LLM: https://ollama.com/library/gemma3:12b-it-q4_K_M
 - VITS TTS: https://huggingface.co/facebook/mms-tts-lao
 - Retrieval-based Voice Conversion: https://github.com/daswer123/rvc-python
+- Denoise module: https://github.com/Rikorose/DeepFilterNet

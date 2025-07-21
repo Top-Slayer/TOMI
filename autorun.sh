@@ -4,6 +4,7 @@ export OLLAMA_NUM_GPU_LAYERS=128
 
 NUM=0
 LOCAL_PORT=50051
+VC_DIR="core-process/mikuAI"
 OUTPUT_FILE="config_tunnel.json"
 LLM_MODEL="gemma3:12b-it-q4_K_M"
 URL=""
@@ -29,6 +30,15 @@ if [[ -z "$URL" || -z "$PASS" ]]; then
     exit 1
 fi
 
+if [ ! -d "$VC_DIR" ] || [ -z "$(ls -A "$VC_DIR")" ]; then
+    echo "Directory not found: $VC_DIR"
+    mkdir -p "$VC_DIR"
+    echo "Created directory: $VC_DIR"
+    curl -L https://huggingface.co/yaniroo/YanAI/resolve/main/MikuAI.zip -o "$VC_DIR/MikuAI.zip"
+    unzip "$VC_DIR/MikuAI.zip" -d "$VC_DIR" && rm "$VC_DIR/MikuAI.zip"
+else 
+    echo "Directory exists: $VC_DIR"
+fi
 
 if ! which ngrok >/dev/null 2>&1; then
     echo "⬇️ Installing Ngrok..."
