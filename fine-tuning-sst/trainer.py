@@ -9,7 +9,7 @@ import json
 import os
 
 
-repo_name = "wav2vec2-large-xls-r-300m-lao"
+repo_name = "wav2vec2-xls-r-300m-lao"
 
 
 from dotenv import load_dotenv
@@ -241,7 +241,7 @@ def compute_metrics(pred):
 from transformers import Wav2Vec2ForCTC
 
 model = Wav2Vec2ForCTC.from_pretrained(
-    "facebook/wav2vec2-large-xls-r-300m",
+    "facebook/wav2vec2-xls-r-300m",
     attention_dropout=0.1,
     hidden_dropout=0.1,
     feat_proj_dropout=0.0,
