@@ -1,5 +1,4 @@
 # Load dataset
-from transformers import EarlyStoppingCallback
 from datasets import Dataset
 from evaluate import load as load_metric
 import pandas as pd
@@ -242,7 +241,7 @@ def compute_metrics(pred):
 from transformers import Wav2Vec2ForCTC
 
 model = Wav2Vec2ForCTC.from_pretrained(
-    "facebook/wav2vec2-large-xlsr-53",
+    "facebook/wav2vec2-large-xls-r-300m",
     attention_dropout=0.1,
     hidden_dropout=0.1,
     feat_proj_dropout=0.0,
@@ -267,16 +266,17 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=4,
     per_device_eval_batch_size=8,
 
-    learning_rate=3e-5,
-    warmup_steps=500,
+    learning_rate=5e-5,
+    warmup_steps=1000,
 
     eval_strategy="steps",
-    eval_steps=400,
+    eval_steps=200,
+
     logging_strategy="steps",
-    logging_steps=100,
+    logging_steps=50,
 
     save_strategy="steps",
-    save_steps=400,
+    save_steps=200,
     save_total_limit=3,
 
     num_train_epochs=30,
@@ -286,6 +286,7 @@ training_args = TrainingArguments(
     greater_is_better=False,   
 
     report_to="tensorboard",
+    warmup_ratio=0.1,
 )
 
 from transformers import Trainer
@@ -298,8 +299,6 @@ trainer = Trainer(
     tokenizer=processor,
     data_collator=data_collator,
     compute_metrics=compute_metrics,
-    processing_class=processor.feature_extractor,
-    callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
 )
 
 trainer.train()
