@@ -1,4 +1,5 @@
 # Load dataset
+from transformers import EarlyStoppingCallback
 from datasets import Dataset
 from evaluate import load as load_metric
 import pandas as pd
@@ -241,7 +242,7 @@ def compute_metrics(pred):
 from transformers import Wav2Vec2ForCTC
 
 model = Wav2Vec2ForCTC.from_pretrained(
-    "facebook/wav2vec2-xls-r-300m",
+    "facebook/wav2vec2-large-xlsr-53",
     attention_dropout=0.1,
     hidden_dropout=0.1,
     feat_proj_dropout=0.0,
@@ -262,36 +263,43 @@ from transformers import TrainingArguments
 training_args = TrainingArguments(
     output_dir="model",
     group_by_length=True,
-    per_device_train_batch_size=32,
-    gradient_accumulation_steps=1,
-    per_device_eval_batch_size=16,
-    metric_for_best_model='wer',
+    per_device_train_batch_size=8,
+    gradient_accumulation_steps=4,
+    per_device_eval_batch_size=8,
+
+    learning_rate=3e-5,
+    warmup_steps=500,
+
     eval_strategy="steps",
-    eval_steps=1000,
+    eval_steps=400,
     logging_strategy="steps",
-    logging_steps=1000,
+    logging_steps=100,
+
     save_strategy="steps",
-    save_steps=1000,
-    num_train_epochs=100,
-    fp16=True,
-    learning_rate=1e-4,
-    warmup_steps=1000,
+    save_steps=400,
     save_total_limit=3,
-    # gradient_checkpointing=True,
+
+    num_train_epochs=30,
+    fp16=True,
+    load_best_model_at_end=True,
+    metric_for_best_model='wer',
+    greater_is_better=False,   
+
     report_to="tensorboard",
-    push_to_hub=True,
 )
 
 from transformers import Trainer
 
 trainer = Trainer(
     model=model,
-    data_collator=data_collator,
     args=training_args,
-    compute_metrics=compute_metrics,
     train_dataset=train_ds,
     eval_dataset=test_ds,
+    tokenizer=processor,
+    data_collator=data_collator,
+    compute_metrics=compute_metrics,
     processing_class=processor.feature_extractor,
+    callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
 )
 
 trainer.train()
