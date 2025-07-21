@@ -1,5 +1,6 @@
 import time
-from functions import tts, stt, chat2llm
+import os
+from functions import tts, stt, chat2llm, voice_changer as vc
 from utils import shmem, denoise
 from utils import logging as lg
 
@@ -16,10 +17,13 @@ from utils import logging as lg
 
 
 if __name__ == "__main__":
+    os.makedirs("tmp", exist_ok=True)
+
     try:
         while 1:
             in_bytes = shmem.read_bytes_from_shm()
-            text = stt.transcript(denoise.denoise_input_sound(in_bytes, debug=True))
+            denoise_bytes = denoise.denoise_input_sound(in_bytes, debug=True)
+            text = stt.transcript(denoise_bytes)
             print(lg.log_concat("STT output:", text))
             chat2llm.chat(text)
             shmem.add_end_to_shm()

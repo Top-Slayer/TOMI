@@ -5,10 +5,13 @@ from utils import shmem
 from utils import logging as lg
 import scipy
 from scipy.io.wavfile import write as wav_write
-import io
+import io, os
+from . import voice_changer as vc
 
 model = VitsModel.from_pretrained("facebook/mms-tts-lao")
 tokenizer = AutoTokenizer.from_pretrained("facebook/mms-tts-lao")
+
+not_vc_path = os.path.join("tmp", "not_vc.wav")
 
 
 def synthesize(text: str):
@@ -27,10 +30,11 @@ def synthesize(text: str):
     print(lg.log_concat(f"TTS output info: {int16_datas} size: {len(int16_datas)} shape: {int16_datas.shape}"))
 
     # test write wav file
-    # scipy.io.wavfile.write("out_folder/techno.wav", rate=model.config.sampling_rate, data=int16_datas)
+    scipy.io.wavfile.write(not_vc_path, rate=model.config.sampling_rate, data=int16_datas)
+    vc_bytes = vc.change_voice(not_vc_path)
 
     buffer = io.BytesIO()
-    wav_write(buffer, model.config.sampling_rate, int16_datas)
+    buffer.write(vc_bytes)
     buffer.seek(0)
 
     shmem.write_bytes_to_shm(buffer.getvalue())

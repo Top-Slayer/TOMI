@@ -5,7 +5,7 @@ import io
 from utils import logging as lg
 
 
-model_path = "../fine-tuning-sst/model/checkpoint-5200"
+model_path = "../fine-tuning-sst/model.bak/checkpoint-20100"
 
 model = Wav2Vec2ForCTC.from_pretrained(model_path)
 processor = Wav2Vec2Processor.from_pretrained(model_path)
