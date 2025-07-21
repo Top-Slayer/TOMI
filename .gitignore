@@ -20,5 +20,7 @@ fine-tuning-sst/model.bak/
 fine-tuning-sst/vocab.json/
 fine-tuning-sst/stt_evaluation_results.csv
 fine-tuning-sst/vocab.json
+fine-tuning-sst/denoise_file.wav
+fine-tuning-sst/output.wav
 core-process/tmp/
 core-process/mikuAI
