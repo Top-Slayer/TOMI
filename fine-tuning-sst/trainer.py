@@ -1,3 +1,6 @@
+# Check config if have data 10 hours upper
+# https://github.com/Top-Slayer/TOMI/commit/228b862b5e4e4c598c8fb0d6964d4f2259749631
+
 # Load dataset
 from datasets import Dataset
 from evaluate import load as load_metric
