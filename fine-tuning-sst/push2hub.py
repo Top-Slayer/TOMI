@@ -16,6 +16,8 @@ parser.add_argument("--path", type=str)
 args = parser.parse_args()
 
 checkpoint_path = args.path
+log_path = "model/runs"
+
 repo_name = "TopSlayer/wav2vec2-large-xls-r-300m-lao"
 
 
@@ -142,4 +144,5 @@ It achieves the following results on the evaluation set:
 """
     )
 
+upload_folder(repo_id=repo_name, folder_path=log_path)
 upload_folder(repo_id=repo_name, folder_path=checkpoint_path)
