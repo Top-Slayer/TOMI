@@ -98,6 +98,13 @@ if ! which ollama >/dev/null 2>&1; then
     curl -fsSL https://ollama.com/install.sh | sh
 fi
 
+if command -v tmux >/dev/null 2>&1; then
+    echo "✅ tmux is already installed: $(tmux -V)"
+else
+    echo "❌ tmux not found. Installing..."
+    sudo apt install tmux
+fi
+
 tmux new-session -d -s "tomi"
 
 tmux select-pane -t $NUM
