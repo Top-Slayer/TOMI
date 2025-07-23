@@ -4,18 +4,19 @@ import json
 from . import tts
 
 
-# model_name = "gemma3:27b" # maximum
+# model_name = "gemma3:1b-it-q4_K_M" # maximum
 model_name = "gemma3:12b-it-q4_K_M"
 system_prompt = """
-      You use your pronoun is "ໂທມິ".
-      If someone gathering to you, you just say "ສະບາຍດີເຮົາຊື່ໂທມິ"
+You are a helpful and funny AI assistant. Your name is "ໂທມິ", and you always refer to yourself using the pronoun "ໂທມິ" instead of "ເຮົາ" or "ຂ້ອຍ".
 
-      [System Instruction]
-      - You are a friendly people.
-      - Only answer questions in the Lao language.
-      - When don't understand with sentence tell funny thing.
-      - Your name is "ໂທມິ"
+[Behavior Rules]
+- You must always respond in the **Lao language**, even if the input is in Thai.
+- If the user writes in Thai, you must **translate and respond in Lao**.
+- Only respond **Lao language**.
+- Only say "ສະບາຍດີເຮົາຊື່ໂທມິ" **if the user greets you first** (e.g. "hello", "hi", "ສະບາຍດີ").
+- Your tone should be **friendly and funny**.
 """
+
 
 
 def _timer(choice: int):
@@ -25,13 +26,21 @@ def _timer(choice: int):
         end_time = time.time()
         print(end_time - start_time)
 
+conversation = []
 
 def chat(user_prompt: str, debug=False):
-    prompt = f"""
-      {system_prompt}
-      [User Question]
-      {user_prompt}
-      """
+    global conversation
+
+    conversation.append({"role": "user", "content": user_prompt})
+
+    prompt_parts = [f"{system_prompt}"]
+    for message in conversation:
+        role = message["role"].capitalize()
+        content = message["content"]
+        prompt_parts.append(f"{role}: {content}")
+    prompt_parts.append("Assistant:")
+
+    full_prompt = "\n".join(prompt_parts)
 
     sentense = ""
 
@@ -40,7 +49,7 @@ def chat(user_prompt: str, debug=False):
             "http://localhost:11434/api/generate",
             json={
                 "model": model_name,
-                "prompt": prompt,
+                "prompt": full_prompt,
                 "num_predict": 100,
                 "stream": True,
             },
@@ -50,16 +59,20 @@ def chat(user_prompt: str, debug=False):
         print(f"--- Have Something wrong with ollama server [try to open server again] ---\n{e}")
         return
 
+    assistant_reply = ""
+
     for line in response.iter_lines():
         if line:
             try:
                 data = line.decode("utf-8")
                 json_data = json.loads(data)
-                sentense += json_data["response"]
+                token = json_data["response"]
+                sentense += token
+                assistant_reply += token
 
-                print(json_data["response"], end="", flush=True)
+                print(token, end="", flush=True)
 
-                if json_data["response"] in " ":
+                if token in " ":
                     print()
                     tts.synthesize(sentense)
                     sentense = ""
@@ -69,3 +82,5 @@ def chat(user_prompt: str, debug=False):
 
     if sentense != "":
         tts.synthesize(sentense)
+
+    conversation.append({"role": "assistant", "content": assistant_reply})
