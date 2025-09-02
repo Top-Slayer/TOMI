@@ -1,17 +1,36 @@
 {
-  description = "Dev environment with basic tools";
+  description = "My Dev Environment";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs";
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/25.05";
+  };
 
-  outputs = { self, nixpkgs }: {
-    devShells.default = nixpkgs.legacyPackages.x86_64-linux.mkShell {
-      buildInputs = [
-        nixpkgs.legacyPackages.x86_64-linux.curl
-        nixpkgs.legacyPackages.x86_64-linux.ca-certificates
-        nixpkgs.legacyPackages.x86_64-linux.wget
-        nixpkgs.legacyPackages.x86_64-linux.gnupg
-        nixpkgs.legacyPackages.x86_64-linux.tmux
+  outputs = { self, nixpkgs }: let
+    system = "x86_64-linux";
+    pkgs = nixpkgs.legacyPackages.${system};
+  in {
+    devShells.${system}.default = pkgs.mkShell {
+      buildInputs = with pkgs; [
+        which
+        gcc
+        cmake
+        git
+        subversion
+        python312
+        python312Packages.numpy
+        python312Packages.setuptools
+        python312Packages.wheel
+        python312Packages.pip
+        python312Packages.torch
+        python312Packages.torchaudio
+        python312Packages.transformers 
+        python312Packages.posix_ipc
+        python312Packages.scipy
       ];
+
+      shellHook = ''
+        source ./venv/bin/activate
+      '';
     };
   };
 }

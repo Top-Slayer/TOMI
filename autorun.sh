@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# sh <(curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install) --daemon --yes   # Install nix packages. manager
+# mkdir -p ~/.config/nix
+# echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
+
+
 export OLLAMA_NUM_GPU_LAYERS=128
 
 NUM=0
