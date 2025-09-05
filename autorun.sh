@@ -45,6 +45,16 @@ else
     echo "Directory exists: $VC_DIR"
 fi
 
+
+if ! command -v cargo >/dev/null 2>&1; then
+    echo "Cargo not found, installing via rustup..."
+    curl https://sh.rustup.rs -sSf | sh
+    source "$HOME/.cargo/env"
+else
+    echo "Cargo already installed"
+fi
+
+
 if ! which ngrok >/dev/null 2>&1; then
     echo "⬇️ Installing Ngrok..."
     curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc \

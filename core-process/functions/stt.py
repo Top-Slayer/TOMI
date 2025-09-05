@@ -51,22 +51,22 @@ def transcript(wav_bytes: bytes, lang: str = "lao") -> str:
     pred_ids = torch.argmax(logits, dim=-1)[0]
     clean_prediction = processor.decode(pred_ids).replace("[PAD]", "")
 
-    if lang == "lao":
-        with open(
-            "tmp/raw_datasets/sample.tsv", "a", encoding="utf-8", newline=""
-        ) as f:
-            writer = csv.writer(f, delimiter="\t")
+    # if lang == "lao":
+    #     with open(
+    #         "tmp/raw_datasets/sample.tsv", "a", encoding="utf-8", newline=""
+    #     ) as f:
+    #         writer = csv.writer(f, delimiter="\t")
 
-            des_file = f"{datetime.now().strftime('%d%m%Y_%H%M%S_%f')[:-3]}.wav"
-            waveform = torch.clamp(speech_array, -1.0, 1.0)
-            waveform_int16 = (waveform * 32767).to(torch.int16)
-            torchaudio.save(
-                f"tmp/raw_datasets/clips/{des_file}.wav",
-                waveform_int16,
-                sampling_rate,
-                encoding="PCM_S",
-                bits_per_sample=16,
-            )
-            writer.writerow([des_file, clean_prediction])
+    #         des_file = f"{datetime.now().strftime('%d%m%Y_%H%M%S_%f')[:-3]}.wav"
+    #         waveform = torch.clamp(speech_array, -1.0, 1.0)
+    #         waveform_int16 = (waveform * 32767).to(torch.int16)
+    #         torchaudio.save(
+    #             f"tmp/raw_datasets/clips/{des_file}.wav",
+    #             waveform_int16,
+    #             sampling_rate,
+    #             encoding="PCM_S",
+    #             bits_per_sample=16,
+    #         )
+    #         writer.writerow([des_file, clean_prediction])
 
     return clean_prediction
